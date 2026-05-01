@@ -134,9 +134,11 @@ class RunnerService(QObject):
 
     def stop(self):
         if self.process.state() == QProcess.ProcessState.Running:
+            self.is_killing = True
             self.process.kill()
             self.process.waitForFinished(1000)
             self.state_changed.emit("Idle")
+            self.is_killing = False
 
     def handle_stdout(self):
         text = self.process.readAllStandardOutput().data().decode('utf-8', errors='replace')
@@ -153,5 +155,7 @@ class RunnerService(QObject):
             self.state_changed.emit("Failed")
 
     def handle_error(self, error):
+        if getattr(self, 'is_killing', False):
+            return
         self.state_changed.emit("Failed")
         self.log_ready.emit(f"Process Error: {error}")
