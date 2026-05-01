@@ -1026,6 +1026,8 @@ class AppController:
         paths, _ = QFileDialog.getOpenFileNames(self.window, "Select Subtitle Files", "", "Subtitle Files (*.ass *.srt)")
         if paths:
             self.window.analyze_tab.files_input.setText(";".join(paths))
+            self.window.analyze_tab.files_input.setCursorPosition(0)
+            self.window.analyze_tab.log_console.append(f"Loaded {len(paths)} file(s) for analysis.")
             
     def _on_analyze_browse_folder(self):
         dir_path = QFileDialog.getExistingDirectory(self.window, "Select Folder Containing Subtitles")
@@ -1035,6 +1037,8 @@ class AppController:
                     glob.glob(os.path.join(dir_path, "**", "*.srt"), recursive=True)
             if files:
                 self.window.analyze_tab.files_input.setText(";".join(files))
+                self.window.analyze_tab.files_input.setCursorPosition(0)
+                self.window.analyze_tab.log_console.append(f"Loaded {len(files)} file(s) from folder for analysis.")
             else:
                 QMessageBox.information(self.window, "No Files", "No .ass or .srt files found in the selected folder.")
 
