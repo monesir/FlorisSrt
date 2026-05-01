@@ -445,8 +445,14 @@ class AppController:
             input_file, _ = QFileDialog.getOpenFileName(self.window, "Select Original Subtitle File", "", "Subtitles (*.ass *.srt)")
             if not input_file:
                 return
+                
+        # Determine format from actual input file extension
+        _, ext = os.path.splitext(input_file)
+        format_type = ext.lower().replace('.', '') if ext else state.get('format_type', 'srt')
         
-        output_file, _ = QFileDialog.getSaveFileName(self.window, "Save Rebuilt Subtitle", "", "Subtitles (*.ass *.srt)")
+        default_save_name = os.path.join(os.path.dirname(input_file), f"edited_{os.path.basename(input_file)}")
+        output_file, _ = QFileDialog.getSaveFileName(self.window, "Save Rebuilt Subtitle", default_save_name, f"Subtitles (*.{format_type})")
+        
         if not output_file:
             return
             
