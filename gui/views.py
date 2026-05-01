@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, Q
                              QLabel, QLineEdit, QProgressBar, QPlainTextEdit, 
                              QFormLayout, QComboBox, QSpinBox, QTableWidget, 
                              QTableWidgetItem, QHeaderView, QTextEdit, QCheckBox, 
-                             QTabWidget, QMainWindow, QStatusBar, QAbstractItemView, QSizePolicy)
+                             QTabWidget, QMainWindow, QStatusBar, QAbstractItemView, QSizePolicy, QDialog)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 import os
