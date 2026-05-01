@@ -132,7 +132,7 @@ def main():
                 combined_glossary[k_lower] = v
                 
     glossary_matcher = GlossaryMatcher(combined_glossary)
-    translation_cache = TranslationCache(proj_info['project_dir'])
+    translation_cache = TranslationCache(proj_info['project_path'])
     
     # Load Agent Prompts
     agents_prompt_path = os.path.join('agents', 'AGENTS.md')
