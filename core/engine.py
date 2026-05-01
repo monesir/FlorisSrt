@@ -119,6 +119,9 @@ class TranslationEngine:
         if self.force_single_line:
             system_prompt += "\n\nCRITICAL FORMATTING:\nNEVER use '\\n' or line breaks inside the translated text. Keep the translation as a single continuous line, no matter how long it is."
             
+        # إضافة تذكير نهائي للحفاظ على الوسوم (Tags) وعدم نسيانها بسبب الـ Recency Bias
+        system_prompt += "\n\nFINAL CRITICAL REMINDER:\n1. You MUST preserve ALL subtitle tags (e.g., {\\an8}, {\\i1}, {\\pos(...)}) exactly as they appear in the original text. Do NOT delete them!\n2. Output valid JSON only."
+            
         if project_data.get('characters') and project_data['characters'].get('characters'):
             # Smart Character Matcher
             all_text = ""
@@ -224,6 +227,17 @@ class TranslationEngine:
                 for seg in final_segments:
                     if self.force_single_line and 'translated' in seg and seg['translated']:
                         seg['translated'] = seg['translated'].replace('\n', ' ')
+                    
+                    # استعادة الوسوم (Tags) المفقودة برمجياً لضمان عدم تلف ملف الـ ASS
+                    original_text = next((s['text'] for s in chunk['segments'] if s['id'] == seg['id']), "")
+                    leading_tags_match = re.match(r'^(\{\\[^}]+\})+', original_text)
+                    if leading_tags_match and 'translated' in seg:
+                        leading_tags = leading_tags_match.group(0)
+                        if not seg['translated'].startswith(leading_tags):
+                            # تنظيف أي وسم جزئي قد يكون الـ LLM أضافه بالخطأ
+                            clean_trans = re.sub(r'^\{\\[^}]+\}+', '', seg['translated']).strip()
+                            seg['translated'] = leading_tags + clean_trans
+                            
                 return {"status": "success", "segments": final_segments, "usage": usage, "terms_detected": validation.get('terms_detected', [])}
                 
             else:
