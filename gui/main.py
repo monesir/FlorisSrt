@@ -36,7 +36,7 @@ class ConnectionTester(QThread):
                 headers["x-api-key"] = self.api_key
                 headers["anthropic-version"] = "2023-06-01"
             elif self.provider == "deepseek":
-                url = "https://api.deepseek.com/models"
+                url = "https://api.deepseek.com/user/balance"
                 headers["Authorization"] = f"Bearer {self.api_key}"
             elif self.provider == "openrouter":
                 url = "https://openrouter.ai/api/v1/auth/key"
@@ -158,6 +158,7 @@ class AppController:
         self.window.run_tab.resume_btn.clicked.connect(self._resume_translation)
         self.window.run_tab.stop_btn.clicked.connect(self._stop_translation)
         self.window.run_tab.open_out_btn.clicked.connect(self._open_output_folder)
+        self.window.run_tab.prompt_mode_cb.currentTextChanged.connect(self._on_prompt_mode_changed)
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
@@ -173,10 +174,10 @@ class AppController:
         
         self.window.settings_tab.provider_cb.currentTextChanged.connect(self._on_provider_changed)
         self.window.settings_tab.ext_provider_cb.currentTextChanged.connect(self._on_ext_provider_changed)
-        self.window.settings_tab.api_key.textEdited.connect(self._cache_provider_data)
+        self.window.settings_tab.api_key.textChanged.connect(self._cache_provider_data)
         self.window.settings_tab.model_name.editTextChanged.connect(self._cache_provider_data)
         self.window.settings_tab.model_name.currentTextChanged.connect(self._cache_provider_data)
-        self.window.settings_tab.ext_api_key.textEdited.connect(self._cache_ext_provider_data)
+        self.window.settings_tab.ext_api_key.textChanged.connect(self._cache_ext_provider_data)
         self.window.settings_tab.ext_model_name.editTextChanged.connect(self._cache_ext_provider_data)
         self.window.settings_tab.ext_model_name.currentTextChanged.connect(self._cache_ext_provider_data)
         
@@ -228,6 +229,14 @@ class AppController:
         else:
             self.window.run_tab.logs_view.appendPlainText(f"{time_str}{en_msg} | {ar_msg}")
 
+    def _on_prompt_mode_changed(self, mode_text):
+        if "Custom" in mode_text:
+            self.window.run_tab.lbl_prompt_warning.show()
+            self.window.run_tab.custom_prompt_group.show()
+        else:
+            self.window.run_tab.lbl_prompt_warning.hide()
+            self.window.run_tab.custom_prompt_group.hide()
+            
     def _on_tab_changed(self, index):
         current_widget = self.window.tabs.currentWidget()
         if current_widget == self.window.data_editor_tab:
@@ -860,6 +869,11 @@ class AppController:
         st.log_language_cb.setCurrentText(prefs.get("log_language", "Bilingual"))
         st.translation_style_cb.setCurrentText(prefs.get("translation_style", "Standard (فصحى)"))
         st.force_single_line.setChecked(prefs.get("force_single_line", False))
+        
+        custom_prompts = config.get("custom_prompts", {})
+        self.window.run_tab.prompt_mode_cb.setCurrentText(custom_prompts.get("mode", "Default (agents.md/soul.md)"))
+        self.window.run_tab.custom_agents_edit.setPlainText(custom_prompts.get("agents", ""))
+        self.window.run_tab.custom_soul_edit.setPlainText(custom_prompts.get("soul", ""))
 
     def _save_config(self, show_msg=True):
         self._cache_provider_data()
@@ -896,6 +910,12 @@ class AppController:
             "log_language": st.log_language_cb.currentText(),
             "translation_style": st.translation_style_cb.currentText(),
             "force_single_line": st.force_single_line.isChecked()
+        }
+        
+        self.config_cache["custom_prompts"] = {
+            "mode": self.window.run_tab.prompt_mode_cb.currentText(),
+            "agents": self.window.run_tab.custom_agents_edit.toPlainText(),
+            "soul": self.window.run_tab.custom_soul_edit.toPlainText()
         }
         
         self.config_service.save(self.config_cache)
@@ -948,6 +968,8 @@ class AppController:
         max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
         infinite_retries_val = self.config_cache.get("execution", {}).get("infinite_retries", False)
         
+        prompt_mode = self.window.run_tab.prompt_mode_cb.currentText()
+        
         self.runner.start(
             file_path=path,
             provider=provider,
@@ -960,7 +982,8 @@ class AppController:
             force_single_line=force_single,
             timeout=timeout_val,
             max_retries=max_retries_val,
-            infinite_retries=infinite_retries_val
+            infinite_retries=infinite_retries_val,
+            prompt_mode=prompt_mode
         )
 
     def _resume_translation(self):
@@ -980,6 +1003,8 @@ class AppController:
         max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
         infinite_retries_val = self.config_cache.get("execution", {}).get("infinite_retries", False)
         
+        prompt_mode = self.window.run_tab.prompt_mode_cb.currentText()
+        
         self._log_internal("Resuming translation...", "جاري استئناف الترجمة...")
         self.runner.start(
             file_path=path,
@@ -993,7 +1018,8 @@ class AppController:
             force_single_line=force_single,
             timeout=timeout_val,
             max_retries=max_retries_val,
-            infinite_retries=infinite_retries_val
+            infinite_retries=infinite_retries_val,
+            prompt_mode=prompt_mode
         )
 
     def _stop_translation(self):

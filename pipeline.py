@@ -50,6 +50,7 @@ def main():
     parser.add_argument("--timeout", type=int, default=120, help="API Timeout in seconds")
     parser.add_argument("--max-retries", type=int, default=3, help="Max retries for API and Validation")
     parser.add_argument("--infinite-retries", action="store_true", help="Never skip chunk on failure")
+    parser.add_argument("--prompt-mode", default="default", help="Prompt Mode (default/custom)")
     
     args = parser.parse_args()
     
@@ -149,12 +150,25 @@ def main():
         soul_prompt_path = os.path.join('agents', 'SOUL.md')
     
     agents_prompt = ""
-    if os.path.exists(agents_prompt_path):
-        with open(agents_prompt_path, 'r', encoding='utf-8') as f:
-            agents_prompt = f.read()
-    if os.path.exists(soul_prompt_path):
-        with open(soul_prompt_path, 'r', encoding='utf-8') as f:
-            agents_prompt += "\n\n" + f.read()
+    if args.prompt_mode.lower() == "custom":
+        config_path = os.path.join(PROJECT_ROOT, 'config', 'user_settings.json')
+        try:
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = json.load(f)
+                custom = config.get("custom_prompts", {})
+                agents_prompt = custom.get("agents", "")
+                soul_prompt = custom.get("soul", "")
+                if soul_prompt:
+                    agents_prompt += "\n\n" + soul_prompt
+        except Exception as e:
+            t_print(f"Error loading custom prompts: {e}")
+    else:
+        if os.path.exists(agents_prompt_path):
+            with open(agents_prompt_path, 'r', encoding='utf-8') as f:
+                agents_prompt = f.read()
+        if os.path.exists(soul_prompt_path):
+            with open(soul_prompt_path, 'r', encoding='utf-8') as f:
+                agents_prompt += "\n\n" + f.read()
 
     # 5. Execution Loop
     completed = set(state.get('completed_chunks', []))

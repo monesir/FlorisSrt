@@ -31,9 +31,43 @@ class RunTab(QWidget):
         
         self.lbl_project = QLabel("Project: None")
         self.lbl_episode = QLabel("Episode: None")
-        layout.addWidget(QLabel("<b>Detected Project</b>"))
-        layout.addWidget(self.lbl_project)
-        layout.addWidget(self.lbl_episode)
+        
+        project_layout = QHBoxLayout()
+        
+        info_layout = QVBoxLayout()
+        info_layout.addWidget(QLabel("<b>Detected Project</b>"))
+        info_layout.addWidget(self.lbl_project)
+        info_layout.addWidget(self.lbl_episode)
+        project_layout.addLayout(info_layout)
+        
+        prompt_layout = QVBoxLayout()
+        prompt_mode_layout = QHBoxLayout()
+        prompt_mode_layout.addWidget(QLabel("<b>System Prompt Mode:</b>"))
+        self.prompt_mode_cb = QComboBox()
+        self.prompt_mode_cb.addItems(["Default (agents.md/soul.md)", "Custom (User Input)"])
+        prompt_mode_layout.addWidget(self.prompt_mode_cb)
+        prompt_layout.addLayout(prompt_mode_layout)
+        
+        self.lbl_prompt_warning = QLabel("⚠️ You are overriding system behavior")
+        self.lbl_prompt_warning.setStyleSheet("color: red; font-weight: bold;")
+        self.lbl_prompt_warning.hide()
+        prompt_layout.addWidget(self.lbl_prompt_warning)
+        
+        project_layout.addLayout(prompt_layout)
+        layout.addLayout(project_layout)
+        
+        self.custom_prompt_group = QGroupBox("Custom Prompts")
+        self.custom_prompt_group.hide()
+        custom_layout = QVBoxLayout(self.custom_prompt_group)
+        custom_layout.addWidget(QLabel("Custom AGENTS:"))
+        self.custom_agents_edit = QTextEdit()
+        self.custom_agents_edit.setMaximumHeight(100)
+        custom_layout.addWidget(self.custom_agents_edit)
+        custom_layout.addWidget(QLabel("Custom SOUL:"))
+        self.custom_soul_edit = QTextEdit()
+        self.custom_soul_edit.setMaximumHeight(100)
+        custom_layout.addWidget(self.custom_soul_edit)
+        layout.addWidget(self.custom_prompt_group)
         
         controls_layout = QHBoxLayout()
         self.start_btn = QPushButton("Start")
