@@ -487,12 +487,12 @@ class AppController:
         provider = self.window.settings_tab.provider_cb.currentText()
         api_key = self.window.settings_tab.api_key.text().strip()
         model_name = self.window.settings_tab.model_name.currentText().strip()
-        log_lang = config.get("preferences", {}).get("log_language", "Bilingual")
-        trans_style = config.get("preferences", {}).get("translation_style", "Standard (فصحى)")
-        force_single = config.get("preferences", {}).get("force_single_line", False)
+        log_lang = self.config_cache.get("preferences", {}).get("log_language", "Bilingual")
+        trans_style = self.config_cache.get("preferences", {}).get("translation_style", "Standard (فصحى)")
+        force_single = self.config_cache.get("preferences", {}).get("force_single_line", False)
         
         self.runner.start(
-            file_path=file_path,
+            file_path=path,
             provider=provider,
             api_key=api_key,
             model_name=model_name,
@@ -512,10 +512,22 @@ class AppController:
         provider = self.window.settings_tab.provider_cb.currentText()
         api_key = self.window.settings_tab.api_key.text().strip()
         model_name = self.window.settings_tab.model_name.currentText().strip()
-        log_lang = self.window.settings_tab.log_language_cb.currentText()
+        log_lang = self.config_cache.get("preferences", {}).get("log_language", "Bilingual")
+        trans_style = self.config_cache.get("preferences", {}).get("translation_style", "Standard (فصحى)")
+        force_single = self.config_cache.get("preferences", {}).get("force_single_line", False)
         
         self._log_internal("Resuming translation...", "جاري استئناف الترجمة...")
-        self.runner.start(path, provider=provider, api_key=api_key, model_name=model_name, resume=True, project_name=getattr(self, 'batch_project_name', None), log_language=log_lang)
+        self.runner.start(
+            file_path=path,
+            provider=provider,
+            api_key=api_key,
+            model_name=model_name,
+            resume=True,
+            project_name=getattr(self, 'batch_project_name', None),
+            log_language=log_lang,
+            translation_style=trans_style,
+            force_single_line=force_single
+        )
 
     def _stop_translation(self):
         self._log_internal("Translation stopped forcefully.", "تم إيقاف عملية الترجمة إجبارياً.")
