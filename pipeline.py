@@ -141,7 +141,7 @@ def main():
             agents_prompt += "\n\n" + f.read()
 
     # 5. Execution Loop
-    completed = set(state.get('completed_chunks', []) + state.get('degraded_chunks', []))
+    completed = set(state.get('completed_chunks', []))
     chunks_to_process = min(args.max_chunks, len(chunks)) if args.max_chunks else len(chunks)
     
     all_final_segments = []
@@ -234,8 +234,13 @@ def main():
         # Update State
         state_manager.save_chunk(i, result)
         
+        # Clean up existing state for this chunk to avoid duplicates on resume
+        if i in state.get('completed_chunks', []): state['completed_chunks'].remove(i)
+        if i in state.get('degraded_chunks', []): state['degraded_chunks'].remove(i)
+        if i in state.get('failed_chunks', []): state['failed_chunks'].remove(i)
+        
         if result['status'] == 'success':
-            state['completed_chunks'].append(i)
+            state.setdefault('completed_chunks', []).append(i)
             t_print(f"✅ Chunk {i+1} success | ✅ نجاح الشنك {i+1}")
             
             translation_cache.add_translations(result['segments'], raw_segments)
@@ -259,10 +264,10 @@ def main():
                     json.dump(term_memory, f, ensure_ascii=False, indent=2)
                     
         elif result['status'] == 'degraded':
-            state['degraded_chunks'].append(i)
+            state.setdefault('degraded_chunks', []).append(i)
             t_print(f"Chunk {i+1} degraded | انهيار آمن للشنك {i+1}")
         elif result['status'] == 'failed':
-            state['failed_chunks'].append(i)
+            state.setdefault('failed_chunks', []).append(i)
             t_print(f"Chunk {i+1} failed | فشل الشنك {i+1}")
             
         state_manager.save_state(state)
