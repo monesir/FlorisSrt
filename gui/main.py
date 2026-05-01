@@ -604,6 +604,19 @@ class AppController:
             self.current_project = project_name
             self.window.lbl_status_right.setText(f"Project: {project_name}")
             
+            if getattr(self, 'current_episode', None):
+                state_path = os.path.join(self.project_service.base_dir, project_name, "episodes", self.current_episode, "project.json")
+                self.window.run_tab.resume_btn.setEnabled(os.path.exists(state_path))
+                
+            ed_cb = self.window.data_editor_tab.project_cb
+            ed_cb.blockSignals(True)
+            if ed_cb.findText(project_name) == -1:
+                ed_cb.addItem(project_name)
+            ed_cb.setCurrentText(project_name)
+            ed_cb.blockSignals(False)
+            
+            self._load_project_data_to_editor()
+            
     def _load_project_data_to_editor(self):
         if not self.current_project:
             self.window.data_editor_tab.char_table.setRowCount(0)
