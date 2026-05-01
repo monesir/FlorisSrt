@@ -551,13 +551,15 @@ class UsageTab(QWidget):
         left_lay.addWidget(QLabel("<b>Pricing Engine</b>"))
         
         left_lay.addWidget(QLabel("Provider:"))
-        self.provider_input = QLineEdit("openai")
-        self.provider_input.setPlaceholderText("e.g. openai")
+        self.provider_input = QComboBox()
+        self.provider_input.setEditable(True)
+        self.provider_input.addItems(["openai", "deepseek", "anthropic", "google"])
         left_lay.addWidget(self.provider_input)
         
         left_lay.addWidget(QLabel("Model:"))
-        self.model_input = QLineEdit("gpt-4o")
-        self.model_input.setPlaceholderText("e.g. gpt-4o")
+        self.model_input = QComboBox()
+        self.model_input.setEditable(True)
+        self.model_input.addItems(["gpt-4o", "gpt-4o-mini", "deepseek-chat", "claude-3-5-sonnet", "gemini-2.5-pro"])
         left_lay.addWidget(self.model_input)
         
         left_lay.addWidget(QLabel("Input / 1M tokens ($):"))

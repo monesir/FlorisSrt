@@ -174,8 +174,8 @@ class AppController:
         self.window.usage_tab.btn_refresh.clicked.connect(self._refresh_usage_tab)
         self.window.usage_tab.btn_export.clicked.connect(self._export_usage_csv)
         self.window.usage_tab.btn_clear.clicked.connect(self._clear_usage_ledger)
-        self.window.usage_tab.provider_input.textChanged.connect(self._on_pricing_key_changed)
-        self.window.usage_tab.model_input.textChanged.connect(self._on_pricing_key_changed)
+        self.window.usage_tab.provider_input.currentTextChanged.connect(self._on_pricing_key_changed)
+        self.window.usage_tab.model_input.currentTextChanged.connect(self._on_pricing_key_changed)
         self.window.usage_tab.filter_project.currentTextChanged.connect(self._refresh_usage_tab)
         self.window.usage_tab.filter_model.currentTextChanged.connect(self._refresh_usage_tab)
         
@@ -427,8 +427,8 @@ class AppController:
         self._on_pricing_key_changed()
 
     def _on_pricing_key_changed(self):
-        prov = self.window.usage_tab.provider_input.text().strip()
-        model = self.window.usage_tab.model_input.text().strip()
+        prov = self.window.usage_tab.provider_input.currentText().strip()
+        model = self.window.usage_tab.model_input.currentText().strip()
         key = f"{prov}:{model}"
         
         pricing = self.usage_tracker.get_pricing()
@@ -440,8 +440,8 @@ class AppController:
             self.window.usage_tab.price_out.setValue(0)
 
     def _save_pricing(self):
-        prov = self.window.usage_tab.provider_input.text().strip()
-        model = self.window.usage_tab.model_input.text().strip()
+        prov = self.window.usage_tab.provider_input.currentText().strip()
+        model = self.window.usage_tab.model_input.currentText().strip()
         if not prov or not model:
             QMessageBox.warning(self.window, "Error", "Provider and Model cannot be empty.")
             return
