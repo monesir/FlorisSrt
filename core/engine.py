@@ -126,10 +126,10 @@ class TranslationEngine:
             # Smart Character Matcher
             all_text = ""
             if chunk.get('context_before'):
-                all_text += " ".join([s.get('Text', '') for s in chunk['context_before']]) + " "
-            all_text += " ".join([s.get('Text', '') for s in chunk['segments']]) + " "
+                all_text += " ".join([s.get('text', '') for s in chunk['context_before']]) + " "
+            all_text += " ".join([s.get('text', '') for s in chunk['segments']]) + " "
             if chunk.get('context_after'):
-                all_text += " ".join([s.get('Text', '') for s in chunk['context_after']])
+                all_text += " ".join([s.get('text', '') for s in chunk['context_after']])
             
             all_text_lower = all_text.lower()
             matched_characters = []
