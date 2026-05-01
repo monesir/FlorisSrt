@@ -73,7 +73,19 @@ If none are found, return empty arrays.
                 )
                 content = response.choices[0].message.content
                 
-            return json.loads(content)
+            # Extract JSON from markdown or conversational text
+            import re
+            json_match = re.search(r"\{[\s\S]*\}", content)
+            if json_match:
+                content = json_match.group(0)
+                
+            data = json.loads(content)
+            
+            # Ensure lists are returned even if LLM gives null
+            return {
+                "characters": data.get("characters") or [],
+                "terms": data.get("terms") or []
+            }
         except Exception as e:
             print(f"Extraction Error: {e}")
             return {"characters": [], "terms": []}
@@ -90,7 +102,7 @@ If none are found, return empty arrays.
             print(f"Failed to parse {filepath}: {e}")
             return {"characters": [], "terms": []}
             
-        chunk_size = 200
+        chunk_size = 150 # Reduced from 200 to avoid token limits and truncated JSON
         chunks = [segments[i:i + chunk_size] for i in range(0, len(segments), chunk_size)]
         
         all_chars = {}
@@ -104,11 +116,14 @@ If none are found, return empty arrays.
             result = self.extract_from_text(text_block, source_lang)
             
             # Merge Results
-            for char in result.get('characters', []):
+            chars_list = result.get('characters') or []
+            for char in chars_list:
                 name = char.get('name', '').strip()
                 if name and name not in all_chars:
                     all_chars[name] = char
-            for term in result.get('terms', []):
+                    
+            terms_list = result.get('terms') or []
+            for term in terms_list:
                 t_name = term.get('term', '').strip()
                 if t_name and t_name not in all_terms:
                     all_terms[t_name] = term
