@@ -171,6 +171,8 @@ class AppController:
         self.window.settings_tab.ext_provider_cb.currentTextChanged.connect(self._on_ext_provider_changed)
         self.window.settings_tab.api_key.textEdited.connect(self._cache_provider_data)
         self.window.settings_tab.model_name.editTextChanged.connect(self._cache_provider_data)
+        self.window.settings_tab.ext_api_key.textEdited.connect(self._cache_ext_provider_data)
+        self.window.settings_tab.ext_model_name.editTextChanged.connect(self._cache_ext_provider_data)
         
         self.window.settings_tab.btn_browse_glossary.clicked.connect(lambda: self._browse_settings_file(self.window.settings_tab.path_glossary, "JSON Files (*.json)"))
         self.window.settings_tab.btn_browse_characters.clicked.connect(lambda: self._browse_settings_file(self.window.settings_tab.path_characters, "JSON Files (*.json)"))
@@ -740,7 +742,7 @@ class AppController:
         self.window.settings_tab.api_key.blockSignals(False)
         
     def _on_ext_provider_changed(self, new_provider):
-        ext_cfg = self.config_cache.get("extractor_agent", {})
+        prov_data = self.config_cache.get("ext_providers", {}).get(new_provider, {})
         
         models = {
             "gemini": [
@@ -767,13 +769,15 @@ class AppController:
         if new_provider in models:
             self.window.settings_tab.ext_model_name.addItems(models[new_provider])
         
-        # Select the saved one or fallback to the first one
-        saved_model = ext_cfg.get("model", "")
-        if not saved_model:
-            saved_model = models.get(new_provider, [""])[0]
+        if not prov_data.get("name"):
+            prov_data["name"] = models.get(new_provider, [""])[0]
             
-        self.window.settings_tab.ext_model_name.setCurrentText(saved_model)
+        self.window.settings_tab.ext_model_name.setCurrentText(prov_data.get("name", ""))
         self.window.settings_tab.ext_model_name.blockSignals(False)
+        
+        self.window.settings_tab.ext_api_key.blockSignals(True)
+        self.window.settings_tab.ext_api_key.setText(prov_data.get("api_key", ""))
+        self.window.settings_tab.ext_api_key.blockSignals(False)
 
     def _cache_provider_data(self):
         st = self.window.settings_tab
@@ -785,6 +789,16 @@ class AppController:
             "api_key": st.api_key.text().strip()
         }
 
+    def _cache_ext_provider_data(self):
+        st = self.window.settings_tab
+        current_prov = st.ext_provider_cb.currentText()
+        if "ext_providers" not in self.config_cache:
+            self.config_cache["ext_providers"] = {}
+        self.config_cache["ext_providers"][current_prov] = {
+            "name": st.ext_model_name.currentText().strip(),
+            "api_key": st.ext_api_key.text().strip()
+        }
+
     def _load_config(self):
         config = self.config_cache
         st = self.window.settings_tab
@@ -793,9 +807,19 @@ class AppController:
         self._on_provider_changed(model.get("provider", "openai"))
         
         ext_agent = config.get("extractor_agent", {})
+        
+        # Migrate old single-key config to new ext_providers structure if needed
+        if "ext_providers" not in config:
+            config["ext_providers"] = {}
+            if "provider" in ext_agent:
+                config["ext_providers"][ext_agent["provider"]] = {
+                    "name": ext_agent.get("model", ""),
+                    "api_key": ext_agent.get("api_key", "")
+                }
+                
         st.ext_provider_cb.setCurrentText(ext_agent.get("provider", "openai"))
-        st.ext_model_name.setCurrentText(ext_agent.get("model", ""))
-        st.ext_api_key.setText(ext_agent.get("api_key", ""))
+        self._on_ext_provider_changed(ext_agent.get("provider", "openai"))
+        
         st.ext_infinite_retries.setChecked(ext_agent.get("infinite_retries", False))
         st.ext_chunk_size.setValue(ext_agent.get("chunk_size", 75))
         
@@ -819,6 +843,7 @@ class AppController:
 
     def _save_config(self, show_msg=True):
         self._cache_provider_data()
+        self._cache_ext_provider_data()
         st = self.window.settings_tab
         
         if "model" not in self.config_cache:
