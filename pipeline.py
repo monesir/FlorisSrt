@@ -136,8 +136,12 @@ def main():
     translation_cache = TranslationCache(proj_info['project_path'])
     
     # Load Agent Prompts
-    agents_prompt_path = os.path.join('agents', 'AGENTS.md')
-    soul_prompt_path = os.path.join('agents', 'SOUL.md')
+    if args.translation_style == "Colloquial (عامية)":
+        agents_prompt_path = os.path.join('agents', 'AGENTS_AMMIYA.md')
+        soul_prompt_path = os.path.join('agents', 'SOUL_AMMIYA.md')
+    else:
+        agents_prompt_path = os.path.join('agents', 'AGENTS.md')
+        soul_prompt_path = os.path.join('agents', 'SOUL.md')
     
     agents_prompt = ""
     if os.path.exists(agents_prompt_path):

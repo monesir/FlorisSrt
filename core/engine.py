@@ -126,9 +126,6 @@ class TranslationEngine:
         if project_data.get('work_context') and project_data['work_context'].get('description'):
             system_prompt += f"\n\nWORK CONTEXT:\n{json.dumps(project_data['work_context'], ensure_ascii=False)}"
             
-        if self.translation_style == "Colloquial (عامية)":
-            system_prompt += "\n\nCRITICAL TRANSLATION STYLE:\nYou MUST translate the dialogues into modern Colloquial Arabic (العامية)، focusing on natural, everyday conversational flow rather than rigid Standard Arabic. Use regional slang where appropriate if the character speaks casually, but keep the core meaning intact. For formal characters, you may use a slightly elevated colloquial tone."
-            
         if self.force_single_line:
             system_prompt += "\n\nCRITICAL FORMATTING:\nNEVER use '\\n' or line breaks inside the translated text. Keep the translation as a single continuous line, no matter how long it is."
             
