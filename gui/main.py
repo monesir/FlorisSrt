@@ -564,7 +564,12 @@ class AppController:
         terms = glos_data.get("terms", [])
         self.window.data_editor_tab.glos_table.setRowCount(0)
         for t in terms:
-            self._add_glossary_row(t.get("term", ""), t.get("translation", ""), t.get("type", "hard"))
+            typ = t.get("type", "hard")
+            cat = t.get("category", "")
+            if typ not in ["hard", "soft"]:
+                cat = typ
+                typ = t.get("match_type", "hard")
+            self._add_glossary_row(t.get("term", ""), t.get("translation", ""), cat, typ)
             
         ctx_data = self.project_service.load_project_data(self.current_anime, "work_context.json")
         self.window.data_editor_tab.context_text.setText(ctx_data.get("description", ""))
@@ -585,16 +590,17 @@ class AppController:
         cb.setCurrentText(gender)
         table.setCellWidget(row, 2, cb)
 
-    def _add_glossary_row(self, term="", trans="", type="hard"):
+    def _add_glossary_row(self, term="", trans="", category="", match_type="hard"):
         table = self.window.data_editor_tab.glos_table
         row = table.rowCount()
         table.insertRow(row)
         table.setItem(row, 0, QTableWidgetItem(term))
         table.setItem(row, 1, QTableWidgetItem(trans))
+        table.setItem(row, 2, QTableWidgetItem(category))
         cb = QComboBox()
         cb.addItems(["hard", "soft"])
-        cb.setCurrentText(type)
-        table.setCellWidget(row, 2, cb)
+        cb.setCurrentText(match_type)
+        table.setCellWidget(row, 3, cb)
 
     def _add_term_memory_row(self, term, trans, count, locked):
         table = self.window.data_editor_tab.term_table
@@ -655,9 +661,11 @@ class AppController:
         for i in range(table.rowCount()):
             term = table.item(i, 0).text().strip()
             trans = table.item(i, 1).text().strip()
-            ttype = table.cellWidget(i, 2).currentText()
+            cat_item = table.item(i, 2)
+            category = cat_item.text().strip() if cat_item else ""
+            m_type = table.cellWidget(i, 3).currentText()
             if term:
-                terms.append({"term": term, "translation": trans, "type": ttype})
+                terms.append({"term": term, "translation": trans, "category": category, "type": m_type})
         self.project_service.save_project_data(self.current_anime, "glossary.json", {"terms": terms})
         QMessageBox.information(self.window, "Saved", "Glossary saved.")
 
@@ -1148,7 +1156,7 @@ class AppController:
                 trans = gtable.item(r, 2).text().strip()
                 typ = gtable.item(r, 3).text().strip()
                 if term and term.lower() not in existing_term_names:
-                    existing_terms.append({"term": term, "translation": trans, "type": typ})
+                    existing_terms.append({"term": term, "translation": trans, "category": typ, "type": "hard"})
                     existing_term_names.add(term.lower())
                     added_count += 1
                     

@@ -252,8 +252,8 @@ class DataEditorTab(QWidget):
         
         self.glos_tab = QWidget()
         glos_lay = QVBoxLayout(self.glos_tab)
-        self.glos_table = QTableWidget(0, 3)
-        self.glos_table.setHorizontalHeaderLabels(["Term", "Translation", "Type"])
+        self.glos_table = QTableWidget(0, 4)
+        self.glos_table.setHorizontalHeaderLabels(["Term", "Translation", "Category", "Match Type"])
         self.glos_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.glos_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         glos_lay.addWidget(self.glos_table)
