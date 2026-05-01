@@ -53,10 +53,16 @@ This is where the magic happens.
 
 ### 2. Settings Tab
 Configure your translation engine and parameters.
-- **LLM Provider**: Choose between `openai`, `deepseek`, `openrouter`, or `gemini`.
-- **API Key**: Securely input your API key. It is saved locally and never shared.
-- **Base URL**: If using proxy endpoints or custom models, you can define the API base URL here.
+- **LLM Provider & Model Name**: Choose between `openai`, `deepseek`, `openrouter`, or `gemini`, and explicitly type the model name (e.g., `gpt-4o`, `deepseek-chat`).
+- **API Key & Base URL**: Securely input your API key. If using proxy endpoints, define the custom API base URL here.
+- **Test Connection**: A handy button to verify that your API key and network are working before starting a massive translation batch.
+- **Path Overrides**: Optionally override the default project folders for Glossary, Characters, Context, and Output locations.
+- **Constraint Mode**: 
+  - `strict`: Enforces hard limits on characters per second (CPS) and strictly matches the source tags.
+  - `balanced`: Relaxes line-length limits slightly for better linguistic flow.
+  - `off`: Disables length constraints (not recommended for ASS).
 - **Log Language**: Personalize the live logs to display in English, Arabic, or a Bilingual split format.
+- **Max Retries & Timeout**: Configure the AI's fallback limits. If a response is mangled, the Validator will retry up to *Max Retries*. If the API is overloaded, it will wait up to *Timeout* seconds before triggering the Circuit Breaker.
 
 ### 3. Data Editor Tab (Unlocks upon running)
 FlorisSrt organizes lore and terminology on a **per-project basis**. Once a translation is initialized for an anime, this tab unlocks.
@@ -96,10 +102,17 @@ FlorisSrt organizes lore and terminology on a **per-project basis**. Once a tran
 - **سجل الأحداث (Logs)**: شاشة حية تعرض لك ما يقرؤه ويترجمه الذكاء الاصطناعي لحظة بلحظة.
 
 ### 2. تبويب الإعدادات (Settings)
-مكان تجهيز المحرك والمزود.
-- **المزود (Provider)**: يدعم (DeepSeek, OpenAI, OpenRouter, Gemini).
-- **مفتاح API**: ضع مفتاحك هنا بأمان (يتم حفظه مشفراً في جهازك ولا يُرفع للإنترنت).
-- **لغة السجل (Log Language)**: يمكنك اختيار عرض سجل الأحداث باللغة العربية، أو الإنجليزية، أو كلتيهما معاً.
+مكان تجهيز المحرك والمزود بدقة متناهية.
+- **المزود واسم الموديل (Provider & Model)**: يدعم (DeepSeek, OpenAI, OpenRouter) وغيرها، مع إمكانية كتابة اسم الموديل يدوياً (مثل `gpt-4o`).
+- **مفتاح API والـ Base URL**: ضع مفتاحك هنا بأمان. وإذا كنت تستخدم خوادم بديلة أو بروكسي، يمكنك وضع الرابط المخصص.
+- **فحص الاتصال (Test Connection)**: زر سريع للتأكد من أن مفتاحك يعمل والإنترنت مستقر قبل بدء ترجمة مجلد ضخم.
+- **مسارات مخصصة (Path Overrides)**: إن لم تكن ترغب في استخدام المسارات الافتراضية للبرنامج، يمكنك تحديد مسار خارجي للقاموس أو مجلد المخرجات.
+- **نظام القيود (Constraint Mode)**:
+  - `strict`: صارم جداً! يجبر الذكاء الاصطناعي على الالتزام بعدد محدد من الحروف في الثانية (CPS) ومطابقة وسوم الألوان تماماً.
+  - `balanced`: متوازن. يعطي الذكاء الاصطناعي مساحة حرية إضافية في طول الجمل للحفاظ على بلاغة اللغة العربية.
+  - `off`: إيقاف القيود (لا يُنصح به لملفات الـ ASS المتقدمة).
+- **لغة السجل (Log Language)**: يمكنك اختيار عرض سجل الأحداث باللغة العربية، أو الإنجليزية، أو مدمج.
+- **محاولات التصحيح والمهلة (Retries & Timeout)**: إذا أخطأ الذكاء الاصطناعي في هيكل التنسيق، سيقوم (المدقق) بإجباره على إعادة المحاولة بناءً على العدد الذي تحدده هنا. كما يمكنك تحديد مهلة الانتظار القصوى للرد.
 
 ### 3. تبويب محرر البيانات (Data Editor)
 **هذا التبويب يفتح تلقائياً بمجرد بدئك لترجمة أي أنمي!** وهو المكان السري الذي يجعل ترجمتك احترافية:
