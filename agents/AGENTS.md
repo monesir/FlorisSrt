@@ -112,10 +112,11 @@ If a term appears multiple times: → translate it the same way unless context c
 
 ## GLOSSARY RULES (STRICT)
 If glossary is provided:
-* Use exact translations
+* Use exact translations for matching terms
 * Do NOT rephrase
 * Do NOT ignore
 * Glossary overrides personal judgment
+* Pay close attention to the `category` of the term (e.g., Location, Ability) to understand its context properly when translating.
 
 ---
 

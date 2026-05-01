@@ -121,6 +121,7 @@ def main():
                 combined_glossary[term_key] = {
                     "variants": [term_key],
                     "translation": t.get('translation', ''),
+                    "category": t.get('category', ''),
                     "type": t.get('type', '')
                 }
                 
