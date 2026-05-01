@@ -70,6 +70,7 @@ class ExtractorWorker(QThread):
     progress_updated = Signal(int, int)
     finished_extraction = Signal(dict)
     error_occurred = Signal(str)
+    log_updated = Signal(str)
 
     def __init__(self, cfg, file_paths, source_lang):
         super().__init__()
@@ -80,10 +81,18 @@ class ExtractorWorker(QThread):
     def run(self):
         try:
             from core.extractor import ExtractorEngine
+            
+            ext_cfg = self.cfg.get("extractor_agent", {})
+            provider = ext_cfg.get("provider", self.cfg.get("provider", "openai"))
+            api_key = ext_cfg.get("api_key", self.cfg.get("api_key", ""))
+            model = ext_cfg.get("model", self.cfg.get("model", ""))
+            infinite = ext_cfg.get("infinite_retries", False)
+            
             engine = ExtractorEngine(
-                provider=self.cfg.get("provider", "openai"),
-                api_key=self.cfg.get("api_key", ""),
-                model=self.cfg.get("model", "")
+                provider=provider,
+                api_key=api_key,
+                model=model,
+                infinite_retries=infinite
             )
             
             merged_result = {"characters": [], "terms": []}
@@ -95,7 +104,10 @@ class ExtractorWorker(QThread):
                     chunk_prog = (c_idx / c_total) * (100 / total_files)
                     self.progress_updated.emit(int(base + chunk_prog), 100)
                     
-                res = engine.process_file(fp, self.source_lang, prog_cb)
+                def log_cb(msg):
+                    self.log_updated.emit(msg)
+                    
+                res = engine.process_file(fp, self.source_lang, prog_cb, log_cb)
                 
                 merged_result["characters"].extend(res.get("characters", []))
                 merged_result["terms"].extend(res.get("terms", []))
@@ -183,8 +195,10 @@ class AppController:
         self.window.review_tab.edit_box.textChanged.connect(self._on_review_edit_box_changed)
         
         self.window.analyze_tab.btn_browse.clicked.connect(self._on_analyze_browse)
+        self.window.analyze_tab.btn_browse_folder.clicked.connect(self._on_analyze_browse_folder)
         self.window.analyze_tab.btn_start.clicked.connect(self._on_analyze_start)
         self.window.analyze_tab.btn_save.clicked.connect(self._on_analyze_save)
+        self.window.analyze_tab.btn_export.clicked.connect(self._on_analyze_export)
         
         self.window.tabs.currentChanged.connect(self._on_tab_changed)
 
@@ -668,6 +682,12 @@ class AppController:
         st.provider_cb.setCurrentText(model.get("provider", "openai"))
         self._on_provider_changed(model.get("provider", "openai"))
         
+        ext_agent = config.get("extractor_agent", {})
+        st.ext_provider_cb.setCurrentText(ext_agent.get("provider", "openai"))
+        st.ext_model_name.setCurrentText(ext_agent.get("model", ""))
+        st.ext_api_key.setText(ext_agent.get("api_key", ""))
+        st.ext_infinite_retries.setChecked(ext_agent.get("infinite_retries", False))
+        
         paths = config.get("paths", {})
         st.path_glossary.setText(paths.get("glossary", ""))
         st.path_characters.setText(paths.get("characters", ""))
@@ -699,6 +719,14 @@ class AppController:
             "characters": st.path_characters.text(),
             "work_context": st.path_context.text()
         }
+        
+        self.config_cache["extractor_agent"] = {
+            "provider": st.ext_provider_cb.currentText(),
+            "model": st.ext_model_name.currentText().strip(),
+            "api_key": st.ext_api_key.text().strip(),
+            "infinite_retries": st.ext_infinite_retries.isChecked()
+        }
+        
         self.config_cache["output"] = {"folder": st.path_output.text()}
         self.config_cache["execution"] = {
             "constraint_mode": st.constraint_mode.currentText(),
@@ -884,6 +912,16 @@ class AppController:
         paths, _ = QFileDialog.getOpenFileNames(self.window, "Select Subtitle Files", "", "Subtitle Files (*.ass *.srt)")
         if paths:
             self.window.analyze_tab.files_input.setText(";".join(paths))
+            
+    def _on_analyze_browse_folder(self):
+        dir_path = QFileDialog.getExistingDirectory(self.window, "Select Folder Containing Subtitles")
+        if dir_path:
+            import glob
+            files = glob.glob(os.path.join(dir_path, "*.ass")) + glob.glob(os.path.join(dir_path, "*.srt"))
+            if files:
+                self.window.analyze_tab.files_input.setText(";".join(files))
+            else:
+                QMessageBox.information(self.window, "No Files", "No .ass or .srt files found in the selected folder.")
 
     def _on_analyze_start(self):
         files_str = self.window.analyze_tab.files_input.text()
@@ -899,9 +937,11 @@ class AppController:
         self.window.analyze_tab.char_table.setRowCount(0)
         self.window.analyze_tab.glos_table.setRowCount(0)
         self.window.analyze_tab.progress_bar.setValue(0)
+        self.window.analyze_tab.log_console.clear()
         
         self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang)
         self.extractor_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
+        self.extractor_worker.log_updated.connect(lambda msg: self.window.analyze_tab.log_console.append(msg))
         self.extractor_worker.finished_extraction.connect(self._on_analyze_finished)
         self.extractor_worker.error_occurred.connect(self._on_analyze_error)
         self.extractor_worker.start()
@@ -1001,6 +1041,43 @@ class AppController:
             
         QMessageBox.information(self.window, "Saved", f"Data saved to project '{project}' successfully!")
         self._refresh_data_editor() # Refresh UI
+
+    def _on_analyze_export(self):
+        # Collect Characters
+        new_chars = []
+        ctable = self.window.analyze_tab.char_table
+        for r in range(ctable.rowCount()):
+            if ctable.item(r, 0).checkState() == Qt.Checked:
+                name = ctable.item(r, 1).text().strip()
+                desc = ctable.item(r, 2).text().strip()
+                if name:
+                    new_chars.append({"name": name, "description": desc})
+                    
+        # Collect Terms
+        new_terms = []
+        gtable = self.window.analyze_tab.glos_table
+        for r in range(gtable.rowCount()):
+            if gtable.item(r, 0).checkState() == Qt.Checked:
+                term = gtable.item(r, 1).text().strip()
+                trans = gtable.item(r, 2).text().strip()
+                typ = gtable.item(r, 3).text().strip()
+                if term:
+                    new_terms.append({"term": term, "translation_suggestion": trans, "type": typ})
+                    
+        export_data = {
+            "characters": new_chars,
+            "terms": new_terms
+        }
+        
+        save_path, _ = QFileDialog.getSaveFileName(self.window, "Export Standalone JSON", "", "JSON Files (*.json)")
+        if save_path:
+            import json
+            try:
+                with open(save_path, 'w', encoding='utf-8') as f:
+                    json.dump(export_data, f, ensure_ascii=False, indent=2)
+                QMessageBox.information(self.window, "Exported", "Data exported successfully!")
+            except Exception as e:
+                QMessageBox.critical(self.window, "Error", f"Failed to export: {e}")
 
 if __name__ == "__main__":
     import ctypes

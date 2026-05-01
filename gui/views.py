@@ -1,4 +1,4 @@
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, QGroupBox, 
                              QLabel, QLineEdit, QProgressBar, QPlainTextEdit, 
                              QFormLayout, QComboBox, QSpinBox, QTableWidget, 
                              QTableWidgetItem, QHeaderView, QTextEdit, QCheckBox, 
@@ -85,54 +85,82 @@ class RunTab(QWidget):
 class SettingsTab(QWidget):
     def __init__(self):
         super().__init__()
-        layout = QFormLayout(self)
+        layout = QVBoxLayout(self)
+        
+        # --- Main Agent Settings ---
+        main_group = QGroupBox("Main Translation Agent")
+        main_lay = QFormLayout(main_group)
         
         self.provider_cb = QComboBox()
         self.provider_cb.addItems(["openai", "anthropic", "deepseek", "openrouter", "gemini", "local"])
-        layout.addRow("Provider:", self.provider_cb)
+        main_lay.addRow("Provider:", self.provider_cb)
+
         
         self.model_name = QComboBox()
         self.model_name.setEditable(True)
-        layout.addRow("Model Name:", self.model_name)
+        main_lay.addRow("Model Name:", self.model_name)
         
         self.api_key = QLineEdit()
         self.api_key.setEchoMode(QLineEdit.Password)
-        layout.addRow("API Key:", self.api_key)
+        main_lay.addRow("API Key:", self.api_key)
         
         self.test_conn_btn = QPushButton("Test Connection")
         self.lbl_test_result = QLabel("")
         test_layout = QHBoxLayout()
         test_layout.addWidget(self.test_conn_btn)
         test_layout.addWidget(self.lbl_test_result)
-        layout.addRow("", test_layout)
+        main_lay.addRow("", test_layout)
+        
+        # --- Extractor Agent Settings ---
+        ext_group = QGroupBox("Pre-Analyze Agent (Extractor)")
+        ext_lay = QFormLayout(ext_group)
+        
+        self.ext_provider_cb = QComboBox()
+        self.ext_provider_cb.addItems(["openai", "anthropic", "deepseek", "openrouter", "gemini", "local"])
+        ext_lay.addRow("Provider:", self.ext_provider_cb)
+        
+        self.ext_model_name = QComboBox()
+        self.ext_model_name.setEditable(True)
+        ext_lay.addRow("Model Name:", self.ext_model_name)
+        
+        self.ext_api_key = QLineEdit()
+        self.ext_api_key.setEchoMode(QLineEdit.Password)
+        ext_lay.addRow("API Key:", self.ext_api_key)
+        
+        self.ext_infinite_retries = QCheckBox("Infinite Retries (Never Skip)")
+        ext_lay.addRow("Behavior:", self.ext_infinite_retries)
+        
+        # --- Project Paths Settings ---
+        paths_group = QGroupBox("Project Paths & Config")
+        paths_lay = QFormLayout(paths_group)
         
         self.path_glossary = QLineEdit()
         self.btn_browse_glossary = QPushButton("Browse")
-        layout.addRow("Glossary Path:", self._path_row(self.path_glossary, self.btn_browse_glossary))
+        paths_lay.addRow("Glossary Path:", self._path_row(self.path_glossary, self.btn_browse_glossary))
         
         self.path_characters = QLineEdit()
         self.btn_browse_characters = QPushButton("Browse")
-        layout.addRow("Characters Path:", self._path_row(self.path_characters, self.btn_browse_characters))
+        paths_lay.addRow("Characters Path:", self._path_row(self.path_characters, self.btn_browse_characters))
         
         self.path_context = QLineEdit()
         self.btn_browse_context = QPushButton("Browse")
-        layout.addRow("Work Context Path:", self._path_row(self.path_context, self.btn_browse_context))
+        paths_lay.addRow("Work Context Path:", self._path_row(self.path_context, self.btn_browse_context))
         
         self.path_output = QLineEdit()
         self.btn_browse_output = QPushButton("Browse")
-        layout.addRow("Output Folder:", self._path_row(self.path_output, self.btn_browse_output))
+        paths_lay.addRow("Output Folder:", self._path_row(self.path_output, self.btn_browse_output))
         
         self.constraint_mode = QComboBox()
         self.constraint_mode.addItems(["strict", "balanced", "off"])
-        layout.addRow("Constraint Mode:", self.constraint_mode)
+        paths_lay.addRow("Constraint Mode:", self.constraint_mode)
         
         self.log_language_cb = QComboBox()
         self.log_language_cb.addItems(["Bilingual", "English", "Arabic"])
-        layout.addRow("Log Language:", self.log_language_cb)
+        paths_lay.addRow("Log Language:", self.log_language_cb)
         
         self.translation_style_cb = QComboBox()
         self.translation_style_cb.addItems(["Standard (فصحى)", "Colloquial (عامية)"])
-        layout.addRow("Translation Style:", self.translation_style_cb)
+        paths_lay.addRow("Translation Style:", self.translation_style_cb)
         
         self.max_retries = QSpinBox()
         self.max_retries.setRange(1, 10)
@@ -142,23 +170,28 @@ class SettingsTab(QWidget):
         retries_layout = QHBoxLayout()
         retries_layout.addWidget(self.max_retries)
         retries_layout.addWidget(self.infinite_retries_chk)
-        layout.addRow("Max Retries:", retries_layout)
+        paths_lay.addRow("Max Retries:", retries_layout)
         
         self.infinite_retries_chk.stateChanged.connect(lambda: self.max_retries.setEnabled(not self.infinite_retries_chk.isChecked()))
         
         self.timeout = QSpinBox()
         self.timeout.setRange(5, 120)
-        layout.addRow("Timeout (sec):", self.timeout)
+        paths_lay.addRow("Timeout (sec):", self.timeout)
         
         self.force_single_line = QCheckBox("Force Single Line (No \\n)")
-        layout.addRow("Line Formatting:", self.force_single_line)
+        paths_lay.addRow("Line Formatting:", self.force_single_line)
         
+        
+        layout.addWidget(main_group)
+        layout.addWidget(ext_group)
+        layout.addWidget(paths_group)
+
         btn_layout = QHBoxLayout()
         self.save_btn = QPushButton("Save Settings")
         self.reset_btn = QPushButton("Reset to Default")
         btn_layout.addWidget(self.save_btn)
         btn_layout.addWidget(self.reset_btn)
-        layout.addRow("", btn_layout)
+        layout.addLayout(btn_layout)
 
     def _path_row(self, line_edit, btn):
         widget = QWidget()
@@ -298,8 +331,11 @@ class AnalyzeTab(QWidget):
         self.files_input.setReadOnly(True)
         cfg_lay.addWidget(self.files_input)
         
-        self.btn_browse = QPushButton("Browse...")
+        self.btn_browse = QPushButton("Browse Files...")
         cfg_lay.addWidget(self.btn_browse)
+        
+        self.btn_browse_folder = QPushButton("Browse Folder...")
+        cfg_lay.addWidget(self.btn_browse_folder)
         
         cfg_lay.addWidget(QLabel("Language:"))
         self.lang_cb = QComboBox()
@@ -327,6 +363,13 @@ class AnalyzeTab(QWidget):
         
         self.lbl_status = QLabel("Idle")
         layout.addWidget(self.lbl_status)
+        
+        # Log Console
+        self.log_console = QTextEdit()
+        self.log_console.setReadOnly(True)
+        self.log_console.setMaximumHeight(80)
+        self.log_console.setStyleSheet("background-color: #1e1e1e; color: #a9b7c6; font-family: Consolas;")
+        layout.addWidget(self.log_console)
         
         # Results Section (Splitter or Tabs for Characters and Terms)
         self.results_tabs = QTabWidget()
@@ -356,7 +399,9 @@ class AnalyzeTab(QWidget):
         # Save Section
         bot_lay = QHBoxLayout()
         self.btn_save = QPushButton("Save Selected to Project Data")
+        self.btn_export = QPushButton("Export as Standalone JSON")
         bot_lay.addWidget(self.btn_save)
+        bot_lay.addWidget(self.btn_export)
         layout.addLayout(bot_lay)
 
 class MainWindow(QMainWindow):
