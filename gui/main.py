@@ -64,6 +64,47 @@ class ConnectionTester(QThread):
         except Exception:
             self.result_ready.emit("Failed: Exception", False)
 
+from PySide6.QtCore import pyqtSignal
+
+class ExtractorWorker(QThread):
+    progress_updated = Signal(int, int)
+    finished_extraction = Signal(dict)
+    error_occurred = Signal(str)
+
+    def __init__(self, cfg, file_paths, source_lang):
+        super().__init__()
+        self.cfg = cfg
+        self.file_paths = file_paths
+        self.source_lang = source_lang
+
+    def run(self):
+        try:
+            from core.extractor import ExtractorEngine
+            engine = ExtractorEngine(
+                provider=self.cfg.get("provider", "openai"),
+                api_key=self.cfg.get("api_key", ""),
+                model=self.cfg.get("model", "")
+            )
+            
+            merged_result = {"characters": [], "terms": []}
+            total_files = len(self.file_paths)
+            
+            for f_idx, fp in enumerate(self.file_paths):
+                def prog_cb(c_idx, c_total):
+                    base = (f_idx / total_files) * 100
+                    chunk_prog = (c_idx / c_total) * (100 / total_files)
+                    self.progress_updated.emit(int(base + chunk_prog), 100)
+                    
+                res = engine.process_file(fp, self.source_lang, prog_cb)
+                
+                merged_result["characters"].extend(res.get("characters", []))
+                merged_result["terms"].extend(res.get("terms", []))
+                
+            self.progress_updated.emit(100, 100)
+            self.finished_extraction.emit(merged_result)
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+
 class AppController:
     def __init__(self, window: MainWindow):
         self.window = window
@@ -140,6 +181,10 @@ class AppController:
         self.window.review_tab.rebuild_btn.clicked.connect(self._save_and_rebuild_subtitles)
         self.window.review_tab.table.itemSelectionChanged.connect(self._on_review_row_selected)
         self.window.review_tab.edit_box.textChanged.connect(self._on_review_edit_box_changed)
+        
+        self.window.analyze_tab.btn_browse.clicked.connect(self._on_analyze_browse)
+        self.window.analyze_tab.btn_start.clicked.connect(self._on_analyze_start)
+        self.window.analyze_tab.btn_save.clicked.connect(self._on_analyze_save)
         
         self.window.tabs.currentChanged.connect(self._on_tab_changed)
 
@@ -862,3 +907,125 @@ if __name__ == "__main__":
     controller = AppController(window)
     window.show()
     sys.exit(app.exec())
+    # --- Pre-Analyze Tab Methods ---
+    def _on_analyze_browse(self):
+        paths, _ = QFileDialog.getOpenFileNames(self.window, "Select Subtitle Files", "", "Subtitle Files (*.ass *.srt)")
+        if paths:
+            self.window.analyze_tab.files_input.setText(";".join(paths))
+
+    def _on_analyze_start(self):
+        files_str = self.window.analyze_tab.files_input.text()
+        if not files_str:
+            QMessageBox.warning(self.window, "Warning", "Please select files to analyze.")
+            return
+            
+        file_paths = files_str.split(";")
+        lang = self.window.analyze_tab.lang_cb.currentText()
+        
+        self.window.analyze_tab.btn_start.setEnabled(False)
+        self.window.analyze_tab.lbl_status.setText("Status: Analyzing... This may take a while depending on file size.")
+        self.window.analyze_tab.char_table.setRowCount(0)
+        self.window.analyze_tab.glos_table.setRowCount(0)
+        self.window.analyze_tab.progress_bar.setValue(0)
+        
+        self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang)
+        self.extractor_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
+        self.extractor_worker.finished_extraction.connect(self._on_analyze_finished)
+        self.extractor_worker.error_occurred.connect(self._on_analyze_error)
+        self.extractor_worker.start()
+
+    def _on_analyze_finished(self, result):
+        self.window.analyze_tab.btn_start.setEnabled(True)
+        self.window.analyze_tab.lbl_status.setText("Status: Analysis complete!")
+        self.window.analyze_tab.progress_bar.setValue(100)
+        
+        # Populate Characters
+        chars = result.get("characters", [])
+        ctable = self.window.analyze_tab.char_table
+        ctable.setRowCount(len(chars))
+        for r, char in enumerate(chars):
+            chk = QTableWidgetItem()
+            chk.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            chk.setCheckState(Qt.Checked)
+            ctable.setItem(r, 0, chk)
+            ctable.setItem(r, 1, QTableWidgetItem(char.get('name', '')))
+            ctable.setItem(r, 2, QTableWidgetItem(char.get('description', '')))
+            
+        # Populate Terms
+        terms = result.get("terms", [])
+        gtable = self.window.analyze_tab.glos_table
+        gtable.setRowCount(len(terms))
+        for r, term in enumerate(terms):
+            chk = QTableWidgetItem()
+            chk.setFlags(Qt.ItemIsUserCheckable | Qt.ItemIsEnabled)
+            chk.setCheckState(Qt.Checked)
+            gtable.setItem(r, 0, chk)
+            gtable.setItem(r, 1, QTableWidgetItem(term.get('term', '')))
+            gtable.setItem(r, 2, QTableWidgetItem(term.get('translation_suggestion', '')))
+            gtable.setItem(r, 3, QTableWidgetItem(term.get('type', '')))
+
+    def _on_analyze_error(self, err_msg):
+        self.window.analyze_tab.btn_start.setEnabled(True)
+        self.window.analyze_tab.lbl_status.setText("Status: Error")
+        QMessageBox.critical(self.window, "Error", f"Analysis failed: {err_msg}")
+
+    def _on_analyze_save(self):
+        project = self.window.analyze_tab.project_cb.currentText().strip()
+        if not project:
+            QMessageBox.warning(self.window, "Warning", "Please specify a Target Project (Anime Name).")
+            return
+            
+        from core.project_resolution import ProjectResolution
+        pr = ProjectResolution(self.config_cache.get("output_dir", "projects"))
+        res = pr.resolve(project, "tmp") # just to create the project directory structure
+        data_path = res["data_path"]
+        
+        # Collect Characters
+        new_chars = {}
+        ctable = self.window.analyze_tab.char_table
+        for r in range(ctable.rowCount()):
+            if ctable.item(r, 0).checkState() == Qt.Checked:
+                name = ctable.item(r, 1).text().strip()
+                desc = ctable.item(r, 2).text().strip()
+                if name:
+                    new_chars[name] = {"role": desc, "gender": "unknown"}
+                    
+        # Collect Terms
+        new_terms = {}
+        gtable = self.window.analyze_tab.glos_table
+        for r in range(gtable.rowCount()):
+            if gtable.item(r, 0).checkState() == Qt.Checked:
+                term = gtable.item(r, 1).text().strip()
+                trans = gtable.item(r, 2).text().strip()
+                typ = gtable.item(r, 3).text().strip()
+                if term:
+                    new_terms[term] = {"variants": [term], "translation": trans, "type": typ}
+                    
+        import json
+        char_file = os.path.join(data_path, 'characters.json')
+        glos_file = os.path.join(data_path, 'glossary.json')
+        
+        # Merge with existing
+        if os.path.exists(char_file):
+            try:
+                with open(char_file, 'r', encoding='utf-8') as f:
+                    existing_chars = json.load(f)
+                    existing_chars.update(new_chars)
+                    new_chars = existing_chars
+            except: pass
+        if os.path.exists(glos_file):
+            try:
+                with open(glos_file, 'r', encoding='utf-8') as f:
+                    existing_terms = json.load(f)
+                    existing_terms.update(new_terms)
+                    new_terms = existing_terms
+            except: pass
+            
+        with open(char_file, 'w', encoding='utf-8') as f:
+            json.dump(new_chars, f, ensure_ascii=False, indent=2)
+            
+        with open(glos_file, 'w', encoding='utf-8') as f:
+            json.dump(new_terms, f, ensure_ascii=False, indent=2)
+            
+        QMessageBox.information(self.window, "Saved", f"Data saved to project '{project}' successfully!")
+        self._refresh_data_editor() # Refresh UI

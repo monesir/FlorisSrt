@@ -286,6 +286,79 @@ class ReviewTab(QWidget):
         bot_lay.addWidget(self.rebuild_btn)
         layout.addLayout(bot_lay)
 
+class AnalyzeTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        
+        # Config Section
+        cfg_lay = QHBoxLayout()
+        cfg_lay.addWidget(QLabel("Source Files:"))
+        self.files_input = QLineEdit()
+        self.files_input.setReadOnly(True)
+        cfg_lay.addWidget(self.files_input)
+        
+        self.btn_browse = QPushButton("Browse...")
+        cfg_lay.addWidget(self.btn_browse)
+        
+        cfg_lay.addWidget(QLabel("Language:"))
+        self.lang_cb = QComboBox()
+        self.lang_cb.addItems(["English", "Arabic"])
+        cfg_lay.addWidget(self.lang_cb)
+        layout.addLayout(cfg_lay)
+        
+        # Action Section
+        act_lay = QHBoxLayout()
+        act_lay.addWidget(QLabel("Target Project (Anime Name):"))
+        self.project_cb = QComboBox()
+        self.project_cb.setEditable(True)
+        self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        act_lay.addWidget(self.project_cb)
+        
+        self.btn_start = QPushButton("Start Auto-Extraction")
+        self.btn_start.setStyleSheet("font-weight: bold; padding: 5px;")
+        act_lay.addWidget(self.btn_start)
+        layout.addLayout(act_lay)
+        
+        # Progress
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setValue(0)
+        layout.addWidget(self.progress_bar)
+        
+        self.lbl_status = QLabel("Idle")
+        layout.addWidget(self.lbl_status)
+        
+        # Results Section (Splitter or Tabs for Characters and Terms)
+        self.results_tabs = QTabWidget()
+        
+        # Characters Tab
+        self.char_tab = QWidget()
+        char_lay = QVBoxLayout(self.char_tab)
+        self.char_table = QTableWidget(0, 3)
+        self.char_table.setHorizontalHeaderLabels(["Select", "Character Name", "Description / Role"])
+        self.char_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.char_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        char_lay.addWidget(self.char_table)
+        self.results_tabs.addTab(self.char_tab, "Extracted Characters")
+        
+        # Glossary Tab
+        self.glos_tab = QWidget()
+        glos_lay = QVBoxLayout(self.glos_tab)
+        self.glos_table = QTableWidget(0, 4)
+        self.glos_table.setHorizontalHeaderLabels(["Select", "Term", "Suggested Translation", "Type"])
+        self.glos_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.glos_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        glos_lay.addWidget(self.glos_table)
+        self.results_tabs.addTab(self.glos_tab, "Extracted Glossary Terms")
+        
+        layout.addWidget(self.results_tabs)
+        
+        # Save Section
+        bot_lay = QHBoxLayout()
+        self.btn_save = QPushButton("Save Selected to Project Data")
+        bot_lay.addWidget(self.btn_save)
+        layout.addLayout(bot_lay)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -305,8 +378,10 @@ class MainWindow(QMainWindow):
         self.settings_tab = SettingsTab()
         self.data_editor_tab = DataEditorTab()
         self.review_tab = ReviewTab()
+        self.analyze_tab = AnalyzeTab()
         
         self.tabs.addTab(self.run_tab, "Run")
+        self.tabs.addTab(self.analyze_tab, "Pre-Analyze (Extraction)")
         self.tabs.addTab(self.settings_tab, "Settings")
         self.tabs.addTab(self.data_editor_tab, "Data Editor")
         self.tabs.addTab(self.review_tab, "Review & Post-Edit")
