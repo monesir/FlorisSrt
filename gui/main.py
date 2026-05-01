@@ -138,7 +138,8 @@ class AppController:
         self.window.review_tab.episode_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.filter_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.rebuild_btn.clicked.connect(self._save_and_rebuild_subtitles)
-        self.window.review_tab.table.itemChanged.connect(self._on_review_item_changed)
+        self.window.review_tab.table.itemSelectionChanged.connect(self._on_review_row_selected)
+        self.window.review_tab.edit_box.textChanged.connect(self._on_review_edit_box_changed)
         
         self.window.tabs.currentChanged.connect(self._on_tab_changed)
 
@@ -251,19 +252,45 @@ class AppController:
             table.setItem(row, 4, status_item)
             
         table.blockSignals(False)
+        self.window.review_tab.edit_box.clear()
+        self.current_review_row = -1
 
-    def _on_review_item_changed(self, item):
-        if item.column() == 3: # Arabic Text
-            seg_data = item.data(Qt.UserRole)
-            if not seg_data: return
-            seg_data['translated'] = item.text()
-            item.setData(Qt.UserRole, seg_data)
+    def _on_review_row_selected(self):
+        table = self.window.review_tab.table
+        selected_items = table.selectedItems()
+        if not selected_items:
+            self.current_review_row = -1
+            self.window.review_tab.edit_box.clear()
+            return
             
-            item.setBackground(Qt.white)
-            item.setForeground(Qt.black)
+        row = selected_items[0].row()
+        self.current_review_row = row
+        ar_item = table.item(row, 3)
+        if ar_item:
+            self.window.review_tab.edit_box.blockSignals(True)
+            self.window.review_tab.edit_box.setPlainText(ar_item.text())
+            self.window.review_tab.edit_box.blockSignals(False)
+
+    def _on_review_edit_box_changed(self):
+        if not hasattr(self, 'current_review_row') or self.current_review_row == -1:
+            return
             
-            # Update status column to OK
-            status_item = self.window.review_tab.table.item(item.row(), 4)
+        table = self.window.review_tab.table
+        row = self.current_review_row
+        ar_item = table.item(row, 3)
+        if ar_item:
+            new_text = self.window.review_tab.edit_box.toPlainText()
+            ar_item.setText(new_text)
+            
+            seg_data = ar_item.data(Qt.UserRole)
+            if seg_data:
+                seg_data['translated'] = new_text
+                ar_item.setData(Qt.UserRole, seg_data)
+                
+            ar_item.setBackground(Qt.white)
+            ar_item.setForeground(Qt.black)
+            
+            status_item = table.item(row, 4)
             if status_item:
                 status_item.setText("OK (Edited)")
                 status_item.setForeground(Qt.blue)

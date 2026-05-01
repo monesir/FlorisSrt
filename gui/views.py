@@ -268,7 +268,18 @@ class ReviewTab(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.table.setSelectionMode(QAbstractItemView.SingleSelection)
         layout.addWidget(self.table)
+        
+        # Dedicated Edit Box
+        edit_lay = QVBoxLayout()
+        edit_lay.addWidget(QLabel("Edit Translation:"))
+        self.edit_box = QTextEdit()
+        self.edit_box.setMaximumHeight(80)
+        # Set RTL direction for the edit box
+        self.edit_box.setLayoutDirection(Qt.RightToLeft)
+        edit_lay.addWidget(self.edit_box)
+        layout.addLayout(edit_lay)
         
         bot_lay = QHBoxLayout()
         self.rebuild_btn = QPushButton("Save Edits & Rebuild Subtitles")
