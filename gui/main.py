@@ -220,15 +220,16 @@ class AppController:
             self.window.run_tab.logs_view.appendPlainText(f"{time_str}{en_msg} | {ar_msg}")
 
     def _on_tab_changed(self, index):
-        if index == 2:
+        current_widget = self.window.tabs.currentWidget()
+        if current_widget == self.window.data_editor_tab:
             self._load_project_data_to_editor()
-        elif index == 3:
+        elif current_widget == self.window.review_tab:
             if getattr(self, 'is_running', False):
                 QMessageBox.warning(self.window, "Running", "Cannot review while translation is running.")
                 self.window.tabs.setCurrentIndex(0)
                 return
             self._refresh_review_projects()
-        elif index == 4:
+        elif current_widget == self.window.analyze_tab:
             self._refresh_analyze_projects()
 
     # --- Pre-Analyze Dropdown Refresh ---
