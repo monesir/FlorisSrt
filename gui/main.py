@@ -134,7 +134,8 @@ class AppController:
         self.window.data_editor_tab.term_save.clicked.connect(self._save_term_memory)
         
         self.window.review_tab.refresh_btn.clicked.connect(self._refresh_review_projects)
-        self.window.review_tab.project_cb.currentTextChanged.connect(self._load_review_data)
+        self.window.review_tab.anime_cb.currentTextChanged.connect(self._on_review_anime_changed)
+        self.window.review_tab.episode_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.filter_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.rebuild_btn.clicked.connect(self._save_and_rebuild_subtitles)
         self.window.review_tab.table.itemChanged.connect(self._on_review_item_changed)
@@ -166,20 +167,34 @@ class AppController:
 
     # --- Review Tab Methods ---
     def _refresh_review_projects(self):
-        cb = self.window.review_tab.project_cb
+        self.projects_tree = self.project_service.get_projects_tree()
+        
+        cb = self.window.review_tab.anime_cb
         cb.blockSignals(True)
         cb.clear()
-        projects = self.project_service.get_all_projects()
-        cb.addItems(projects)
+        cb.addItems(list(self.projects_tree.keys()))
         cb.blockSignals(False)
-        if projects:
+        
+        if self.projects_tree:
+            self._on_review_anime_changed(cb.currentText())
+            
+    def _on_review_anime_changed(self, anime_name):
+        if not hasattr(self, 'projects_tree'): return
+        episodes = self.projects_tree.get(anime_name, [])
+        
+        cb = self.window.review_tab.episode_cb
+        cb.blockSignals(True)
+        cb.clear()
+        cb.addItems(episodes)
+        cb.blockSignals(False)
+        
+        if episodes:
             self._load_review_data()
 
     def _load_review_data(self):
-        project_str = self.window.review_tab.project_cb.currentText()
-        if not project_str: return
-        
-        anime, episode = project_str.split(" / ")
+        anime = self.window.review_tab.anime_cb.currentText()
+        episode = self.window.review_tab.episode_cb.currentText()
+        if not anime or not episode: return
         ep_dir = os.path.join(self.project_service.base_dir, anime, 'episodes', episode)
         
         self.current_review_state_manager = StateManager(ep_dir)

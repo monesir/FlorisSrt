@@ -243,10 +243,15 @@ class ReviewTab(QWidget):
         layout = QVBoxLayout(self)
         
         top_lay = QHBoxLayout()
-        top_lay.addWidget(QLabel("Project:"))
-        self.project_cb = QComboBox()
-        self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        top_lay.addWidget(self.project_cb)
+        top_lay.addWidget(QLabel("Anime:"))
+        self.anime_cb = QComboBox()
+        self.anime_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        top_lay.addWidget(self.anime_cb)
+        
+        top_lay.addWidget(QLabel("Episode:"))
+        self.episode_cb = QComboBox()
+        self.episode_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        top_lay.addWidget(self.episode_cb)
         
         self.refresh_btn = QPushButton("Refresh")
         top_lay.addWidget(self.refresh_btn)
