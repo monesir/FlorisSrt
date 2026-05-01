@@ -23,31 +23,25 @@ class ConstraintEngine:
             return 0
         return len(text) / duration
 
-    def smart_split(self, text):
-        """تقسيم النص الذكي بناءً على الفواصل المنطقية"""
-        split_chars = ['،', '.', '؟', '!', ' و', ' لكن', ' ثم']
-        best_split_idx = -1
-        mid = len(text) // 2
-        min_dist = len(text)
-        
-        for char in split_chars:
-            idx = text.find(char)
-            while idx != -1:
-                dist = abs(idx - mid)
-                if dist < min_dist:
-                    min_dist = dist
-                    best_split_idx = idx + (len(char) if not char.startswith(' ') else 0)
-                idx = text.find(char, idx + 1)
-                
-        if best_split_idx != -1 and min_dist < (len(text) // 3):
-            return text[:best_split_idx].strip() + "\n" + text[best_split_idx:].strip()
+    def wrap_after_limit(self, text, limit=40):
+        """قص النص عند أقرب كلمة (مسافة) بعد الحد المسموح"""
+        if len(text) <= limit:
+            return text
             
-        words = text.split(' ')
-        if len(words) > 1:
-            mid_word = len(words) // 2
-            return ' '.join(words[:mid_word]) + '\n' + ' '.join(words[mid_word:])
+        lines = []
+        current_text = text
+        while len(current_text) > limit:
+            split_idx = current_text.find(' ', limit)
+            if split_idx == -1:
+                break
             
-        return text
+            lines.append(current_text[:split_idx].strip())
+            current_text = current_text[split_idx:].strip()
+            
+        if current_text:
+            lines.append(current_text)
+            
+        return '\n'.join(lines)
 
     def programmatic_compress(self, text):
         """ضغط النص برمجياً لإزالة الحشو البصري"""
@@ -79,11 +73,11 @@ class ConstraintEngine:
                 compressed = True
                 visible_text = new_visible_text
                 
-        # إذا كان السطر طويلاً أو הـ CPS ما زال مرتفعاً، نفرض التقسيم
-        if self.calculate_cps(visible_text, duration) > 17 or len(visible_text) > self.max_length:
+        # إذا كان السطر طويلاً، نفرض التقسيم بعد 40 حرف
+        if len(visible_text) > self.max_length:
             if '\n' not in text:
-                text = self.smart_split(text)
-                lines_split = 2
+                text = self.wrap_after_limit(text, limit=40)
+                lines_split = len(text.split('\n'))
                 
         segment['translated'] = text
         
