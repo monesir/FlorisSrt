@@ -99,7 +99,7 @@ class RunnerService(QObject):
         self.process.finished.connect(self.handle_finished)
         self.process.errorOccurred.connect(self.handle_error)
 
-    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3):
+    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3, infinite_retries=False):
         if self.process.state() != QProcess.ProcessState.NotRunning:
             return
             
@@ -126,6 +126,9 @@ class RunnerService(QObject):
         args.extend(["--timeout", str(timeout)])
         args.extend(["--max-retries", str(max_retries)])
         
+        if infinite_retries:
+            args.append("--infinite-retries")
+            
         if resume:
             args.append("--resume")
             

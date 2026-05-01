@@ -30,13 +30,14 @@ class TranslationEngine:
     يحتوي على طبقة (Fault-Tolerant) للتعامل مع الـ Timeouts و הـ Rate Limits بأسلوب
     Exponential Backoff، وحماية الـ Circuit Breaker.
     """
-    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3):
+    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3, infinite_retries=False):
         global log_lang
         log_lang = log_language
         self.translation_style = translation_style
         self.force_single_line = force_single_line
         self.timeout = timeout
         self.max_retries = max_retries
+        self.infinite_retries = infinite_retries
         
         if provider == "deepseek" and not base_url:
             base_url = "https://api.deepseek.com"
@@ -90,7 +91,9 @@ class TranslationEngine:
             self.circuit_open = False
             self.consecutive_failures = 0
             
-        for attempt in range(self.max_retries):
+        attempt = 0
+        max_loops = 999999 if self.infinite_retries else self.max_retries
+        for attempt in range(max_loops):
             try:
                 res = self.call_llm(system_prompt, user_prompt)
                 self.consecutive_failures = 0 # تصفير العداد عند النجاح
@@ -189,7 +192,8 @@ class TranslationEngine:
         retry_type = "full"
         last_valid_segments = []
         
-        for attempt in range(self.max_retries): # محاولات كحد أقصى للـ Validator
+        max_val_loops = 999999 if self.infinite_retries else self.max_retries
+        for attempt in range(max_val_loops): # محاولات كحد أقصى للـ Validator
             
             if retry_type == "full":
                 t_print(f"Sending data to engine ({self.model})... please wait", f"إرسال البيانات للمحرك ({self.model})... يرجى الانتظار", False)

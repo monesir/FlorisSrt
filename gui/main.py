@@ -446,6 +446,8 @@ class AppController:
         st.constraint_mode.setCurrentText(exe.get("constraint_mode", "balanced"))
         st.max_retries.setValue(exe.get("max_retries", 5))
         st.timeout.setValue(exe.get("timeout", 30))
+        if "infinite_retries" in exe:
+            st.infinite_retries_chk.setChecked(exe.get("infinite_retries", False))
         
         prefs = config.get("preferences", {})
         st.log_language_cb.setCurrentText(prefs.get("log_language", "Bilingual"))
@@ -469,7 +471,8 @@ class AppController:
         self.config_cache["execution"] = {
             "constraint_mode": st.constraint_mode.currentText(),
             "max_retries": st.max_retries.value(),
-            "timeout": st.timeout.value()
+            "timeout": st.timeout.value(),
+            "infinite_retries": st.infinite_retries_chk.isChecked()
         }
         
         self.config_cache["preferences"] = {
@@ -516,6 +519,7 @@ class AppController:
         
         timeout_val = self.config_cache.get("execution", {}).get("timeout", 120)
         max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
+        infinite_retries_val = self.config_cache.get("execution", {}).get("infinite_retries", False)
         
         self.runner.start(
             file_path=path,
@@ -528,7 +532,8 @@ class AppController:
             translation_style=trans_style,
             force_single_line=force_single,
             timeout=timeout_val,
-            max_retries=max_retries_val
+            max_retries=max_retries_val,
+            infinite_retries=infinite_retries_val
         )
 
     def _resume_translation(self):
@@ -546,6 +551,7 @@ class AppController:
         
         timeout_val = self.config_cache.get("execution", {}).get("timeout", 120)
         max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
+        infinite_retries_val = self.config_cache.get("execution", {}).get("infinite_retries", False)
         
         self._log_internal("Resuming translation...", "جاري استئناف الترجمة...")
         self.runner.start(
@@ -559,7 +565,8 @@ class AppController:
             translation_style=trans_style,
             force_single_line=force_single,
             timeout=timeout_val,
-            max_retries=max_retries_val
+            max_retries=max_retries_val,
+            infinite_retries=infinite_retries_val
         )
 
     def _stop_translation(self):

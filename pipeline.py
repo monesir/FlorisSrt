@@ -49,6 +49,7 @@ def main():
     parser.add_argument("--force-single-line", action="store_true", help="Force single line output")
     parser.add_argument("--timeout", type=int, default=120, help="API Timeout in seconds")
     parser.add_argument("--max-retries", type=int, default=3, help="Max retries for API and Validation")
+    parser.add_argument("--infinite-retries", action="store_true", help="Never skip chunk on failure")
     
     args = parser.parse_args()
     
@@ -75,7 +76,8 @@ def main():
         translation_style=args.translation_style,
         force_single_line=args.force_single_line,
         timeout=args.timeout,
-        max_retries=args.max_retries
+        max_retries=args.max_retries,
+        infinite_retries=args.infinite_retries
     )
     validator = Validator()
     constraint_engine = ConstraintEngine()

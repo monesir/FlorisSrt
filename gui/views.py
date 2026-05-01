@@ -136,7 +136,15 @@ class SettingsTab(QWidget):
         
         self.max_retries = QSpinBox()
         self.max_retries.setRange(1, 10)
-        layout.addRow("Max Retries:", self.max_retries)
+        
+        self.infinite_retries_chk = QCheckBox("Infinite Retries (Never Skip)")
+        
+        retries_layout = QHBoxLayout()
+        retries_layout.addWidget(self.max_retries)
+        retries_layout.addWidget(self.infinite_retries_chk)
+        layout.addRow("Max Retries:", retries_layout)
+        
+        self.infinite_retries_chk.stateChanged.connect(lambda: self.max_retries.setEnabled(not self.infinite_retries_chk.isChecked()))
         
         self.timeout = QSpinBox()
         self.timeout.setRange(5, 120)
