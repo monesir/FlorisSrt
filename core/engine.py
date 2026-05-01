@@ -74,13 +74,21 @@ class TranslationEngine:
             timeout=self.timeout
         )
         usage = response.usage
+        usage_dict = {
+            "prompt_tokens": usage.prompt_tokens if usage else 0,
+            "completion_tokens": usage.completion_tokens if usage else 0,
+            "total_tokens": usage.total_tokens if usage else 0,
+            "cached_tokens": 0
+        }
+        
+        if usage and hasattr(usage, 'prompt_cache_hit_tokens') and usage.prompt_cache_hit_tokens:
+            usage_dict["cached_tokens"] = usage.prompt_cache_hit_tokens
+        elif usage and hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details and hasattr(usage.prompt_tokens_details, 'cached_tokens') and usage.prompt_tokens_details.cached_tokens:
+            usage_dict["cached_tokens"] = usage.prompt_tokens_details.cached_tokens
+            
         return {
             "content": response.choices[0].message.content,
-            "usage": {
-                "prompt_tokens": usage.prompt_tokens if usage else 0,
-                "completion_tokens": usage.completion_tokens if usage else 0,
-                "total_tokens": usage.total_tokens if usage else 0
-            }
+            "usage": usage_dict
         }
 
     def execute_with_fault_tolerance(self, system_prompt, user_prompt):
@@ -210,7 +218,9 @@ class TranslationEngine:
                 
             usage = result.get('usage', {})
             if usage:
-                t_print(f"Tokens: {usage.get('prompt_tokens')} IN | {usage.get('completion_tokens')} OUT | {usage.get('total_tokens')} TOTAL", f"التوكنز: {usage.get('prompt_tokens')} إدخال | {usage.get('completion_tokens')} إخراج | {usage.get('total_tokens')} الإجمالي", False)
+                cache_str = f" (Cached: {usage.get('cached_tokens', 0)})" if usage.get('cached_tokens', 0) > 0 else ""
+                cache_str_ar = f" (من الكاش: {usage.get('cached_tokens', 0)})" if usage.get('cached_tokens', 0) > 0 else ""
+                t_print(f"Tokens: {usage.get('prompt_tokens')} IN{cache_str} | {usage.get('completion_tokens')} OUT | {usage.get('total_tokens')} TOTAL", f"التوكنز: {usage.get('prompt_tokens')} إدخال{cache_str_ar} | {usage.get('completion_tokens')} إخراج | {usage.get('total_tokens')} الإجمالي", False)
                 
             t_print("Response received, verifying and parsing...", "تم استلام الرد، جاري التدقيق والتحليل...", False)
                 

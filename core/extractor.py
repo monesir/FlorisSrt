@@ -102,7 +102,12 @@ If none are found, return empty arrays."""
                         timeout=self.timeout
                     )
                     content = response.choices[0].message.content
-                    usage_data = {"prompt_tokens": response.usage.prompt_tokens, "completion_tokens": response.usage.completion_tokens, "total_tokens": response.usage.total_tokens} if hasattr(response, 'usage') and response.usage else None
+                    usage_data = {"prompt_tokens": response.usage.prompt_tokens, "completion_tokens": response.usage.completion_tokens, "total_tokens": response.usage.total_tokens, "cached_tokens": 0} if hasattr(response, 'usage') and response.usage else None
+                    if usage_data:
+                        if hasattr(response.usage, 'prompt_cache_hit_tokens') and response.usage.prompt_cache_hit_tokens:
+                            usage_data["cached_tokens"] = response.usage.prompt_cache_hit_tokens
+                        elif hasattr(response.usage, 'prompt_tokens_details') and response.usage.prompt_tokens_details and hasattr(response.usage.prompt_tokens_details, 'cached_tokens') and response.usage.prompt_tokens_details.cached_tokens:
+                            usage_data["cached_tokens"] = response.usage.prompt_tokens_details.cached_tokens
                     
                 import re
                 json_match = re.search(r"\{[\s\S]*\}", content)
@@ -164,7 +169,9 @@ If none are found, return empty arrays."""
             if "usage" in result and result["usage"]:
                 u = result["usage"]
                 total_tokens_used += u.get('total_tokens', 0)
-                if log_callback: log_callback(f"Tokens: {u.get('prompt_tokens')} IN | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
+                if log_callback: 
+                    cache_str = f" (Cached: {u.get('cached_tokens', 0)})" if u.get('cached_tokens', 0) > 0 else ""
+                    log_callback(f"Tokens: {u.get('prompt_tokens')} IN{cache_str} | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
             
             # Merge Results
             chars_list = result.get('characters') or []
