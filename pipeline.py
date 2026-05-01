@@ -301,6 +301,23 @@ def main():
         else:
             rebuilder.build_ass(all_final_segments, args.input, output_filepath)
             
+        t_print(f"File saved successfully to: {output_filepath}")
+        
+        # Auto Backup System (Versioning)
+        import shutil
+        backup_dir = os.path.join(proj_info['project_path'], 'backup', proj_info['episode'])
+        os.makedirs(backup_dir, exist_ok=True)
+        
+        version = 1
+        while True:
+            backup_file = os.path.join(backup_dir, f"v{version}.{format_type}")
+            if not os.path.exists(backup_file):
+                break
+            version += 1
+            
+        shutil.copy2(output_filepath, backup_file)
+        t_print(f"Auto Backup created: {backup_file}")
+            
         t_print(f"Translation completed. File saved at: {output_filepath}", f"اكتملت الترجمة. تم حفظ الملف في: {output_filepath}", False)
     else:
         t_print(f"Not all chunks completed (Expected {len(raw_segments)}, Got {len(all_final_segments)}), final file not built.", f"لم تكتمل كافة الشنكات (المطلوب {len(raw_segments)}، المتاح {len(all_final_segments)})، لم يتم بناء الملف النهائي بعد.", False)
