@@ -160,6 +160,7 @@ class AppController:
         self.window.run_tab.open_out_btn.clicked.connect(self._open_output_folder)
         self.window.run_tab.prompt_mode_cb.currentTextChanged.connect(self._on_prompt_mode_changed)
         self.window.run_tab.save_custom_prompts_btn.clicked.connect(self._save_config)
+        self.window.run_tab.project_cb.currentTextChanged.connect(self._on_run_project_changed)
         
         self.window.action_quick_start.triggered.connect(self._show_quick_start)
         
@@ -248,16 +249,30 @@ class AppController:
         current_widget = self.window.tabs.currentWidget()
         if current_widget == self.window.data_editor_tab:
             self._refresh_editor_projects()
+        elif current_widget == self.window.analyze_tab:
+            self._refresh_analyze_projects()
+        elif current_widget == self.window.run_tab:
+            self._refresh_run_projects()
         elif current_widget == self.window.review_tab:
             if getattr(self, 'is_running', False):
                 QMessageBox.warning(self.window, "Running", "Cannot review while translation is running.")
                 self.window.tabs.setCurrentIndex(0)
                 return
             self._refresh_review_projects()
-        elif current_widget == self.window.analyze_tab:
-            self._refresh_analyze_projects()
 
     # --- Pre-Analyze Dropdown Refresh ---
+    def _refresh_run_projects(self):
+        projects_tree = self.project_service.get_projects_tree()
+        cb = self.window.run_tab.project_cb
+        current = cb.currentText()
+        cb.blockSignals(True)
+        cb.clear()
+        cb.addItem("")
+        cb.addItems(list(projects_tree.keys()))
+        if current in projects_tree:
+            cb.setCurrentText(current)
+        cb.blockSignals(False)
+
     def _refresh_analyze_projects(self):
         projects_tree = self.project_service.get_projects_tree()
         cb = self.window.analyze_tab.project_cb
@@ -557,7 +572,13 @@ class AppController:
         self.current_project = project
         self.current_episode = episode
         
-        self.window.run_tab.lbl_project.setText(f"Project: {project}")
+        cb = self.window.run_tab.project_cb
+        cb.blockSignals(True)
+        if cb.findText(project) == -1:
+            cb.addItem(project)
+        cb.setCurrentText(project)
+        cb.blockSignals(False)
+        
         self.window.run_tab.lbl_episode.setText(f"Episode: {episode}")
         self.window.lbl_status_right.setText(f"Project: {project}")
         
@@ -567,15 +588,20 @@ class AppController:
         self.window.run_tab.resume_btn.setEnabled(os.path.exists(state_path))
         
         self.window.data_editor_tab.setEnabled(True)
-        cb = self.window.data_editor_tab.project_cb
-        cb.blockSignals(True)
-        if cb.findText(project) == -1:
-            cb.addItem(project)
-        cb.setCurrentText(project)
-        cb.blockSignals(False)
+        ed_cb = self.window.data_editor_tab.project_cb
+        ed_cb.blockSignals(True)
+        if ed_cb.findText(project) == -1:
+            ed_cb.addItem(project)
+        ed_cb.setCurrentText(project)
+        ed_cb.blockSignals(False)
         
         self._load_project_data_to_editor()
 
+    def _on_run_project_changed(self, project_name):
+        if project_name:
+            self.current_project = project_name
+            self.window.lbl_status_right.setText(f"Project: {project_name}")
+            
     def _load_project_data_to_editor(self):
         if not self.current_project:
             self.window.data_editor_tab.char_table.setRowCount(0)

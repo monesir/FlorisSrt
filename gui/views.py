@@ -29,14 +29,19 @@ class RunTab(QWidget):
         file_layout.addWidget(self.browse_folder_btn)
         layout.addLayout(file_layout)
         
-        self.lbl_project = QLabel("Project: None")
+        project_label_layout = QHBoxLayout()
+        project_label_layout.addWidget(QLabel("Project:"))
+        self.project_cb = QComboBox()
+        self.project_cb.setEditable(True)
+        project_label_layout.addWidget(self.project_cb)
+        
         self.lbl_episode = QLabel("Episode: None")
         
         project_layout = QHBoxLayout()
         
         info_layout = QVBoxLayout()
-        info_layout.addWidget(QLabel("<b>Detected Project</b>"))
-        info_layout.addWidget(self.lbl_project)
+        info_layout.addWidget(QLabel("<b>Detected / Selected Project</b>"))
+        info_layout.addLayout(project_label_layout)
         info_layout.addWidget(self.lbl_episode)
         project_layout.addLayout(info_layout)
         
