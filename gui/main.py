@@ -159,6 +159,7 @@ class AppController:
         self.window.run_tab.stop_btn.clicked.connect(self._stop_translation)
         self.window.run_tab.open_out_btn.clicked.connect(self._open_output_folder)
         self.window.run_tab.prompt_mode_cb.currentTextChanged.connect(self._on_prompt_mode_changed)
+        self.window.run_tab.save_custom_prompts_btn.clicked.connect(self._save_config)
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)

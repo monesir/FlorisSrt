@@ -67,6 +67,11 @@ class RunTab(QWidget):
         self.custom_soul_edit = QTextEdit()
         self.custom_soul_edit.setMaximumHeight(100)
         custom_layout.addWidget(self.custom_soul_edit)
+        
+        self.save_custom_prompts_btn = QPushButton("Save Custom Prompts")
+        self.save_custom_prompts_btn.setStyleSheet("padding: 5px;")
+        custom_layout.addWidget(self.save_custom_prompts_btn)
+        
         layout.addWidget(self.custom_prompt_group)
         
         controls_layout = QHBoxLayout()
