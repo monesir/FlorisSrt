@@ -177,6 +177,7 @@ class AppController:
         self.window.settings_tab.btn_browse_context.clicked.connect(lambda: self._browse_settings_file(self.window.settings_tab.path_context, "JSON Files (*.json)"))
         self.window.settings_tab.btn_browse_output.clicked.connect(lambda: self._browse_settings_dir(self.window.settings_tab.path_output))
         
+        self.window.data_editor_tab.project_cb.currentTextChanged.connect(self._on_data_editor_project_changed)
         self.window.data_editor_tab.char_add.clicked.connect(self._add_character_row)
         self.window.data_editor_tab.char_del.clicked.connect(lambda: self._delete_table_row(self.window.data_editor_tab.char_table))
         self.window.data_editor_tab.char_save.clicked.connect(self._save_characters)
@@ -222,7 +223,7 @@ class AppController:
     def _on_tab_changed(self, index):
         current_widget = self.window.tabs.currentWidget()
         if current_widget == self.window.data_editor_tab:
-            self._load_project_data_to_editor()
+            self._refresh_editor_projects()
         elif current_widget == self.window.review_tab:
             if getattr(self, 'is_running', False):
                 QMessageBox.warning(self.window, "Running", "Cannot review while translation is running.")
@@ -239,11 +240,34 @@ class AppController:
         current = cb.currentText()
         cb.blockSignals(True)
         cb.clear()
-        cb.addItem("") # Empty option to allow creating new project by typing, or none
+        cb.addItem("")
         cb.addItems(list(projects_tree.keys()))
         if current in projects_tree:
             cb.setCurrentText(current)
         cb.blockSignals(False)
+        
+    # --- Data Editor Dropdown Refresh ---
+    def _refresh_editor_projects(self):
+        projects_tree = self.project_service.get_projects_tree()
+        cb = self.window.data_editor_tab.project_cb
+        current = self.current_anime or cb.currentText()
+        cb.blockSignals(True)
+        cb.clear()
+        cb.addItem("")
+        cb.addItems(list(projects_tree.keys()))
+        if current in projects_tree:
+            cb.setCurrentText(current)
+        cb.blockSignals(False)
+        self._load_project_data_to_editor()
+        
+    def _on_data_editor_project_changed(self, new_project):
+        new_project = new_project.strip()
+        self.current_anime = new_project if new_project else None
+        
+        if new_project and not self.project_service.project_exists(new_project):
+            self.project_service.bootstrap_project(new_project, "")
+            
+        self._load_project_data_to_editor()
 
     # --- Review Tab Methods ---
     def _refresh_review_projects(self):
@@ -513,12 +537,22 @@ class AppController:
         self.window.run_tab.resume_btn.setEnabled(os.path.exists(state_path))
         
         self.window.data_editor_tab.setEnabled(True)
-        self.window.data_editor_tab.lbl_project.setText(f"Editing Project: {anime}")
+        cb = self.window.data_editor_tab.project_cb
+        cb.blockSignals(True)
+        if cb.findText(anime) == -1:
+            cb.addItem(anime)
+        cb.setCurrentText(anime)
+        cb.blockSignals(False)
         
         self._load_project_data_to_editor()
 
     def _load_project_data_to_editor(self):
-        if not self.current_anime: return
+        if not self.current_anime:
+            self.window.data_editor_tab.char_table.setRowCount(0)
+            self.window.data_editor_tab.glos_table.setRowCount(0)
+            self.window.data_editor_tab.context_text.clear()
+            self.window.data_editor_tab.term_table.setRowCount(0)
+            return
         
         char_data = self.project_service.load_project_data(self.current_anime, "characters.json")
         chars = char_data.get("characters", [])
@@ -594,6 +628,9 @@ class AppController:
             table.removeRow(row)
 
     def _save_characters(self):
+        if not self.current_anime:
+            QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
+            return
         table = self.window.data_editor_tab.char_table
         chars = []
         for i in range(table.rowCount()):
@@ -610,6 +647,9 @@ class AppController:
         QMessageBox.information(self.window, "Saved", "Characters saved.")
 
     def _save_glossary(self):
+        if not self.current_anime:
+            QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
+            return
         table = self.window.data_editor_tab.glos_table
         terms = []
         for i in range(table.rowCount()):
@@ -622,11 +662,17 @@ class AppController:
         QMessageBox.information(self.window, "Saved", "Glossary saved.")
 
     def _save_work_context(self):
+        if not self.current_anime:
+            QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
+            return
         desc = self.window.data_editor_tab.context_text.toPlainText()
         self.project_service.save_project_data(self.current_anime, "work_context.json", {"description": desc})
         QMessageBox.information(self.window, "Saved", "Work context saved.")
 
     def _save_term_memory(self):
+        if not self.current_anime:
+            QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
+            return
         table = self.window.data_editor_tab.term_table
         data = {}
         for i in range(table.rowCount()):

@@ -214,9 +214,13 @@ class DataEditorTab(QWidget):
         super().__init__()
         layout = QVBoxLayout(self)
         
-        self.lbl_project = QLabel("Editing Project: None")
-        self.lbl_project.setStyleSheet("font-weight: bold; font-size: 14px;")
-        layout.addWidget(self.lbl_project)
+        proj_lay = QHBoxLayout()
+        proj_lay.addWidget(QLabel("Target Project:"))
+        self.project_cb = QComboBox()
+        self.project_cb.setEditable(True)
+        self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        proj_lay.addWidget(self.project_cb)
+        layout.addLayout(proj_lay)
         
         self.tabs = QTabWidget()
         layout.addWidget(self.tabs)
