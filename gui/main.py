@@ -166,6 +166,7 @@ class AppController:
         self.window.settings_tab.test_conn_btn.clicked.connect(self._test_connection)
         
         self.window.settings_tab.provider_cb.currentTextChanged.connect(self._on_provider_changed)
+        self.window.settings_tab.ext_provider_cb.currentTextChanged.connect(self._on_ext_provider_changed)
         self.window.settings_tab.api_key.textEdited.connect(self._cache_provider_data)
         self.window.settings_tab.model_name.editTextChanged.connect(self._cache_provider_data)
         
@@ -225,6 +226,21 @@ class AppController:
                 self.window.tabs.setCurrentIndex(0)
                 return
             self._refresh_review_projects()
+        elif index == 4:
+            self._refresh_analyze_projects()
+
+    # --- Pre-Analyze Dropdown Refresh ---
+    def _refresh_analyze_projects(self):
+        projects_tree = self.project_service.get_projects_tree()
+        cb = self.window.analyze_tab.project_cb
+        current = cb.currentText()
+        cb.blockSignals(True)
+        cb.clear()
+        cb.addItem("") # Empty option to allow creating new project by typing, or none
+        cb.addItems(list(projects_tree.keys()))
+        if current in projects_tree:
+            cb.setCurrentText(current)
+        cb.blockSignals(False)
 
     # --- Review Tab Methods ---
     def _refresh_review_projects(self):
@@ -665,6 +681,42 @@ class AppController:
         self.window.settings_tab.api_key.blockSignals(True)
         self.window.settings_tab.api_key.setText(prov_data.get("api_key", ""))
         self.window.settings_tab.api_key.blockSignals(False)
+        
+    def _on_ext_provider_changed(self, new_provider):
+        ext_cfg = self.config_cache.get("extractor_agent", {})
+        
+        models = {
+            "gemini": [
+                "gemini-2.5-flash-lite",
+                "gemini-2.5-flash",
+                "gemini-3.1-flash-lite-preview",
+                "gemini-2.5-pro"
+            ],
+            "openrouter": [
+                "google/gemma-4-26b-a4b-it:free",
+                "minimax/minimax-m2.5:free"
+            ],
+            "deepseek": [
+                "deepseek-chat",
+                "deepseek-v4-flash"
+            ],
+            "openai": ["gpt-4o-mini", "gpt-4o"],
+            "anthropic": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
+            "local": ["local-model"]
+        }
+        
+        self.window.settings_tab.ext_model_name.blockSignals(True)
+        self.window.settings_tab.ext_model_name.clear()
+        if new_provider in models:
+            self.window.settings_tab.ext_model_name.addItems(models[new_provider])
+        
+        # Select the saved one or fallback to the first one
+        saved_model = ext_cfg.get("model", "")
+        if not saved_model:
+            saved_model = models.get(new_provider, [""])[0]
+            
+        self.window.settings_tab.ext_model_name.setCurrentText(saved_model)
+        self.window.settings_tab.ext_model_name.blockSignals(False)
 
     def _cache_provider_data(self):
         st = self.window.settings_tab
@@ -1044,7 +1096,7 @@ class AppController:
                 name = ctable.item(r, 1).text().strip()
                 desc = ctable.item(r, 2).text().strip()
                 if name:
-                    new_chars.append({"name": name, "description": desc})
+                    new_chars.append({"name": name, "arabic_name": "", "gender": "unknown", "description": desc})
                     
         # Collect Terms
         new_terms = []
@@ -1055,20 +1107,22 @@ class AppController:
                 trans = gtable.item(r, 2).text().strip()
                 typ = gtable.item(r, 3).text().strip()
                 if term:
-                    new_terms.append({"term": term, "translation_suggestion": trans, "type": typ})
+                    new_terms.append({"term": term, "translation": trans, "type": typ})
                     
-        export_data = {
-            "characters": new_chars,
-            "terms": new_terms
-        }
-        
-        save_path, _ = QFileDialog.getSaveFileName(self.window, "Export Standalone JSON", "", "JSON Files (*.json)")
-        if save_path:
+        dir_path = QFileDialog.getExistingDirectory(self.window, "Select Export Folder")
+        if dir_path:
             import json
             try:
-                with open(save_path, 'w', encoding='utf-8') as f:
-                    json.dump(export_data, f, ensure_ascii=False, indent=2)
-                QMessageBox.information(self.window, "Exported", "Data exported successfully!")
+                char_file = os.path.join(dir_path, 'characters.json')
+                glos_file = os.path.join(dir_path, 'glossary.json')
+                
+                with open(char_file, 'w', encoding='utf-8') as f:
+                    json.dump({"characters": new_chars}, f, ensure_ascii=False, indent=2)
+                    
+                with open(glos_file, 'w', encoding='utf-8') as f:
+                    json.dump({"terms": new_terms}, f, ensure_ascii=False, indent=2)
+                    
+                QMessageBox.information(self.window, "Exported", f"Data exported successfully to:\n{dir_path}")
             except Exception as e:
                 QMessageBox.critical(self.window, "Error", f"Failed to export: {e}")
 
