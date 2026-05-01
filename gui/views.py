@@ -237,6 +237,39 @@ class DataEditorTab(QWidget):
         term_lay.addLayout(term_btns)
         self.tabs.addTab(self.term_tab, "Term Memory")
 
+class ReviewTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        
+        top_lay = QHBoxLayout()
+        top_lay.addWidget(QLabel("Project:"))
+        self.project_cb = QComboBox()
+        self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        top_lay.addWidget(self.project_cb)
+        
+        self.refresh_btn = QPushButton("Refresh")
+        top_lay.addWidget(self.refresh_btn)
+        
+        self.filter_cb = QComboBox()
+        self.filter_cb.addItems(["Show All", "Show Failed & Degraded Only"])
+        top_lay.addWidget(self.filter_cb)
+        layout.addLayout(top_lay)
+        
+        self.table = QTableWidget(0, 5)
+        self.table.setHorizontalHeaderLabels(["Chunk", "ID", "English Text", "Arabic Translation", "Status"])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(1, QHeaderView.ResizeToContents)
+        self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        layout.addWidget(self.table)
+        
+        bot_lay = QHBoxLayout()
+        self.rebuild_btn = QPushButton("Save Edits & Rebuild Subtitles")
+        bot_lay.addWidget(self.rebuild_btn)
+        layout.addLayout(bot_lay)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -255,10 +288,12 @@ class MainWindow(QMainWindow):
         self.run_tab = RunTab()
         self.settings_tab = SettingsTab()
         self.data_editor_tab = DataEditorTab()
+        self.review_tab = ReviewTab()
         
         self.tabs.addTab(self.run_tab, "Run")
         self.tabs.addTab(self.settings_tab, "Settings")
         self.tabs.addTab(self.data_editor_tab, "Data Editor")
+        self.tabs.addTab(self.review_tab, "Review & Post-Edit")
         
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)

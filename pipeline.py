@@ -101,6 +101,12 @@ def main():
     chunks = chunker.create_chunks(normalized_segments)
     state = state_manager.load_or_create_state(len(chunks))
     
+    # Store metadata for Rebuilder in Review Tab
+    state_manager.update_state_metadata({
+        "input_file": os.path.abspath(args.input),
+        "format_type": format_type
+    })
+    
     # Load project data (Glossary, Context, Memory)
     project_data = resolver.load_project_data(proj_info['data_path'])
     

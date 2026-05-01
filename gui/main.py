@@ -8,6 +8,8 @@ from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QTableWidg
 from PySide6.QtCore import QTimer, Qt, QProcess, QThread, Signal
 from views import MainWindow
 from services import ProjectService, ConfigService, RunnerService
+from core.state_manager import StateManager
+from core.parsers.rebuilder import Rebuilder
 
 class ConnectionTester(QThread):
     result_ready = Signal(str, bool)
@@ -129,6 +131,12 @@ class AppController:
         self.window.data_editor_tab.term_del.clicked.connect(lambda: self._delete_table_row(self.window.data_editor_tab.term_table))
         self.window.data_editor_tab.term_save.clicked.connect(self._save_term_memory)
         
+        self.window.review_tab.refresh_btn.clicked.connect(self._refresh_review_projects)
+        self.window.review_tab.project_cb.currentTextChanged.connect(self._load_review_data)
+        self.window.review_tab.filter_cb.currentTextChanged.connect(self._load_review_data)
+        self.window.review_tab.rebuild_btn.clicked.connect(self._save_and_rebuild_subtitles)
+        self.window.review_tab.table.itemChanged.connect(self._on_review_item_changed)
+        
         self.window.tabs.currentChanged.connect(self._on_tab_changed)
 
     def _append_log(self, text):
@@ -147,6 +155,141 @@ class AppController:
     def _on_tab_changed(self, index):
         if index == 2:
             self._load_project_data_to_editor()
+        elif index == 3:
+            if getattr(self, 'is_running', False):
+                QMessageBox.warning(self.window, "Running", "Cannot review while translation is running.")
+                self.window.tabs.setCurrentIndex(0)
+                return
+            self._refresh_review_projects()
+
+    # --- Review Tab Methods ---
+    def _refresh_review_projects(self):
+        cb = self.window.review_tab.project_cb
+        cb.blockSignals(True)
+        cb.clear()
+        projects = self.project_service.get_all_projects()
+        cb.addItems(projects)
+        cb.blockSignals(False)
+        if projects:
+            self._load_review_data()
+
+    def _load_review_data(self):
+        project_str = self.window.review_tab.project_cb.currentText()
+        if not project_str: return
+        
+        anime, episode = project_str.split(" / ")
+        ep_dir = os.path.join(self.project_service.base_dir, anime, episode)
+        
+        self.current_review_state_manager = StateManager(ep_dir)
+        state = self.current_review_state_manager.load_or_create_state(0)
+        total_chunks = state.get('total_chunks', 0)
+        
+        all_segments = self.current_review_state_manager.load_all_chunks(total_chunks)
+        self.current_review_segments = all_segments
+        
+        self._populate_review_table(all_segments)
+        
+    def _populate_review_table(self, segments):
+        table = self.window.review_tab.table
+        filter_type = self.window.review_tab.filter_cb.currentText()
+        
+        table.blockSignals(True)
+        table.setRowCount(0)
+        
+        for seg in segments:
+            is_failed = (seg.get('text', '') == seg.get('translated', '')) or not seg.get('translated', '')
+            
+            if filter_type == "Show Failed & Degraded Only" and not is_failed:
+                continue
+                
+            row = table.rowCount()
+            table.insertRow(row)
+            
+            chunk_item = QTableWidgetItem(str(seg.get('chunk_index', '')))
+            chunk_item.setFlags(chunk_item.flags() & ~Qt.ItemIsEditable)
+            
+            id_item = QTableWidgetItem(str(seg.get('id', '')))
+            id_item.setFlags(id_item.flags() & ~Qt.ItemIsEditable)
+            
+            en_item = QTableWidgetItem(seg.get('text', ''))
+            en_item.setFlags(en_item.flags() & ~Qt.ItemIsEditable)
+            
+            ar_item = QTableWidgetItem(seg.get('translated', ''))
+            ar_item.setData(Qt.UserRole, seg) # Store full segment data
+            
+            status_text = "Failed" if is_failed else "OK"
+            status_item = QTableWidgetItem(status_text)
+            status_item.setFlags(status_item.flags() & ~Qt.ItemIsEditable)
+            if is_failed:
+                status_item.setForeground(Qt.red)
+                ar_item.setBackground(Qt.red)
+                ar_item.setForeground(Qt.white)
+            else:
+                status_item.setForeground(Qt.green)
+                
+            table.setItem(row, 0, chunk_item)
+            table.setItem(row, 1, id_item)
+            table.setItem(row, 2, en_item)
+            table.setItem(row, 3, ar_item)
+            table.setItem(row, 4, status_item)
+            
+        table.blockSignals(False)
+
+    def _on_review_item_changed(self, item):
+        if item.column() == 3: # Arabic Text
+            seg_data = item.data(Qt.UserRole)
+            if not seg_data: return
+            seg_data['translated'] = item.text()
+            item.setData(Qt.UserRole, seg_data)
+            
+            item.setBackground(Qt.white)
+            item.setForeground(Qt.black)
+            
+            # Update status column to OK
+            status_item = self.window.review_tab.table.item(item.row(), 4)
+            if status_item:
+                status_item.setText("OK (Edited)")
+                status_item.setForeground(Qt.blue)
+
+    def _save_and_rebuild_subtitles(self):
+        if not hasattr(self, 'current_review_state_manager'): return
+        
+        table = self.window.review_tab.table
+        updated_segments = []
+        for row in range(table.rowCount()):
+            ar_item = table.item(row, 3)
+            if ar_item:
+                seg_data = ar_item.data(Qt.UserRole)
+                if seg_data:
+                    updated_segments.append(seg_data)
+        
+        self.current_review_state_manager.save_segments_to_chunks(updated_segments)
+        
+        state = self.current_review_state_manager.load_or_create_state(0)
+        input_file = state.get('input_file')
+        format_type = state.get('format_type', 'srt')
+        
+        if not input_file or not os.path.exists(input_file):
+            QMessageBox.warning(self.window, "Warning", "Original input file not found or not set in project state. Please locate it to copy subtitle headers.")
+            input_file, _ = QFileDialog.getOpenFileName(self.window, "Select Original Subtitle File", "", "Subtitles (*.ass *.srt)")
+            if not input_file:
+                return
+        
+        output_file, _ = QFileDialog.getSaveFileName(self.window, "Save Rebuilt Subtitle", "", "Subtitles (*.ass *.srt)")
+        if not output_file:
+            return
+            
+        try:
+            rebuilder = Rebuilder()
+            all_segments = self.current_review_state_manager.load_all_chunks(state.get('total_chunks', 0))
+            if format_type == 'ass':
+                rebuilder.build_ass(all_segments, input_file, output_file)
+            else:
+                rebuilder.build_srt(all_segments, output_file)
+                
+            QMessageBox.information(self.window, "Success", "Subtitle file rebuilt successfully with your manual edits!")
+        except Exception as e:
+            QMessageBox.critical(self.window, "Error", f"Failed to rebuild subtitle: {str(e)}")
 
     def _browse_settings_file(self, line_edit, filter_ext):
         path, _ = QFileDialog.getOpenFileName(self.window, "Select File", "", filter_ext)

@@ -38,6 +38,14 @@ class StateManager:
             json.dump(state, f, ensure_ascii=False, indent=2)
         shutil.move(temp_file, self.state_file)
         
+    def update_state_metadata(self, metadata):
+        """تحديث بيانات وصفية في ملف الحالة دون تدمير بيانات التقدم"""
+        if os.path.exists(self.state_file):
+            with open(self.state_file, 'r', encoding='utf-8') as f:
+                state = json.load(f)
+            state.update(metadata)
+            self.save_state(state)
+        
     def save_chunk(self, chunk_index, chunk_data):
         """حفظ بيانات الشنك بشكل ذري"""
         chunk_file = os.path.join(self.chunks_dir, f'chunk_{chunk_index}.json')
@@ -54,3 +62,32 @@ class StateManager:
             with open(chunk_file, 'r', encoding='utf-8') as f:
                 return json.load(f)
         return None
+        
+    def load_all_chunks(self, total_chunks):
+        """تحميل كل الشنكات دفعة واحدة للمراجعة مع حقن رقم الشنك"""
+        all_segments = []
+        for i in range(total_chunks):
+            chunk_data = self.load_chunk(i)
+            if chunk_data and 'segments' in chunk_data:
+                for seg in chunk_data['segments']:
+                    seg['chunk_index'] = i
+                    all_segments.append(seg)
+        return all_segments
+        
+    def save_segments_to_chunks(self, segments):
+        """حفظ التعديلات من جدول المراجعة إلى ملفات الشنكات المناسبة"""
+        chunk_map = {}
+        for seg in segments:
+            c_idx = seg.get('chunk_index')
+            if c_idx is not None:
+                if c_idx not in chunk_map:
+                    chunk_map[c_idx] = self.load_chunk(c_idx) or {"segments": [], "status": "success"}
+                
+                # Update the specific segment in the chunk
+                for idx, c_seg in enumerate(chunk_map[c_idx]['segments']):
+                    if c_seg['id'] == seg['id']:
+                        chunk_map[c_idx]['segments'][idx]['translated'] = seg.get('translated', '')
+                        break
+                        
+        for c_idx, data in chunk_map.items():
+            self.save_chunk(c_idx, data)

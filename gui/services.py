@@ -20,6 +20,22 @@ class ProjectService:
     def project_exists(self, anime: str) -> bool:
         return os.path.exists(os.path.join(self.base_dir, anime, "data"))
 
+    def get_all_projects(self) -> list:
+        if not os.path.exists(self.base_dir):
+            return []
+        
+        projects = []
+        for anime in os.listdir(self.base_dir):
+            anime_path = os.path.join(self.base_dir, anime)
+            if os.path.isdir(anime_path):
+                for episode in os.listdir(anime_path):
+                    episode_path = os.path.join(anime_path, episode)
+                    if os.path.isdir(episode_path) and episode != 'data':
+                        state_file = os.path.join(episode_path, 'project.json')
+                        if os.path.exists(state_file):
+                            projects.append(f"{anime} / {episode}")
+        return sorted(projects)
+
     def bootstrap_project(self, anime: str, input_path: str) -> None:
         data_dir = os.path.join(self.base_dir, anime, "data")
         os.makedirs(data_dir, exist_ok=True)
