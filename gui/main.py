@@ -175,8 +175,10 @@ class AppController:
         self.window.settings_tab.ext_provider_cb.currentTextChanged.connect(self._on_ext_provider_changed)
         self.window.settings_tab.api_key.textEdited.connect(self._cache_provider_data)
         self.window.settings_tab.model_name.editTextChanged.connect(self._cache_provider_data)
+        self.window.settings_tab.model_name.currentTextChanged.connect(self._cache_provider_data)
         self.window.settings_tab.ext_api_key.textEdited.connect(self._cache_ext_provider_data)
         self.window.settings_tab.ext_model_name.editTextChanged.connect(self._cache_ext_provider_data)
+        self.window.settings_tab.ext_model_name.currentTextChanged.connect(self._cache_ext_provider_data)
         
         self.window.settings_tab.btn_browse_glossary.clicked.connect(lambda: self._browse_settings_file(self.window.settings_tab.path_glossary, "JSON Files (*.json)"))
         self.window.settings_tab.btn_browse_characters.clicked.connect(lambda: self._browse_settings_file(self.window.settings_tab.path_characters, "JSON Files (*.json)"))
@@ -701,7 +703,11 @@ class AppController:
         QMessageBox.information(self.window, "Saved", "Term Memory saved.")
 
     def _on_provider_changed(self, new_provider):
-        prov_data = self.config_cache.get("providers", {}).get(new_provider, {})
+        if "providers" not in self.config_cache:
+            self.config_cache["providers"] = {}
+        if new_provider not in self.config_cache["providers"]:
+            self.config_cache["providers"][new_provider] = {}
+        prov_data = self.config_cache["providers"][new_provider]
         
         models = {
             "gemini": [
@@ -746,7 +752,11 @@ class AppController:
         self.window.settings_tab.api_key.blockSignals(False)
         
     def _on_ext_provider_changed(self, new_provider):
-        prov_data = self.config_cache.get("ext_providers", {}).get(new_provider, {})
+        if "ext_providers" not in self.config_cache:
+            self.config_cache["ext_providers"] = {}
+        if new_provider not in self.config_cache["ext_providers"]:
+            self.config_cache["ext_providers"][new_provider] = {}
+        prov_data = self.config_cache["ext_providers"][new_provider]
         
         models = {
             "gemini": [
