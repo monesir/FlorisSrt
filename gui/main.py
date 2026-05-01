@@ -1079,6 +1079,7 @@ class AppController:
         
         # Collect Characters
         ctable = self.window.analyze_tab.char_table
+        added_count = 0
         for r in range(ctable.rowCount()):
             if ctable.item(r, 0).checkState() == Qt.Checked:
                 name = ctable.item(r, 1).text().strip()
@@ -1086,6 +1087,7 @@ class AppController:
                 if name and name.lower() not in existing_char_names:
                     existing_chars.append({"name": name, "arabic_name": "", "gender": "unknown", "description": desc})
                     existing_char_names.add(name.lower())
+                    added_count += 1
                     
         # Collect Terms
         gtable = self.window.analyze_tab.glos_table
@@ -1097,12 +1099,17 @@ class AppController:
                 if term and term.lower() not in existing_term_names:
                     existing_terms.append({"term": term, "translation": trans, "type": typ})
                     existing_term_names.add(term.lower())
+                    added_count += 1
                     
+        if added_count == 0:
+            QMessageBox.information(self.window, "Info", "No new items were selected or all selected items already exist in the project.")
+            return
+            
         # Save back
         self.project_service.save_project_data(project, "characters.json", {"characters": existing_chars})
         self.project_service.save_project_data(project, "glossary.json", {"terms": existing_terms})
             
-        QMessageBox.information(self.window, "Saved", f"Data saved to project '{project}' successfully!")
+        QMessageBox.information(self.window, "Saved", f"{added_count} new item(s) saved to project '{project}' successfully!")
         self._refresh_data_editor() # Refresh UI
 
     def _on_analyze_export(self):
