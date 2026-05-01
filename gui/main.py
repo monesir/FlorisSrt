@@ -746,21 +746,27 @@ class AppController:
         
         models = {
             "gemini": [
-                "gemini-2.5-flash-lite",
-                "gemini-2.5-flash",
                 "gemini-3.1-flash-lite-preview",
-                "gemini-2.5-pro"
+                "gemini-3.1-pro-preview",
+                "gemini-2.5-pro",
+                "gemini-2.5-flash-lite"
             ],
             "openrouter": [
+                "minimax/minimax-m2.5:free",
+                "tencent/hy3-preview:free",
                 "google/gemma-4-26b-a4b-it:free",
-                "minimax/minimax-m2.5:free"
+                "google/gemma-4-31b-it:free",
+                "nvidia/nemotron-3-super-120b-a12b:free",
+                "qwen/qwen3.6-plus",
+                "deepseek/deepseek-v3.2"
             ],
             "deepseek": [
-                "deepseek-chat",
-                "deepseek-v4-flash"
+                "deepseek-v4-pro",
+                "deepseek-v4-flash",
+                "deepseek-chat"
             ],
-            "openai": ["gpt-4o-mini", "gpt-4o"],
-            "anthropic": ["claude-3-5-haiku-20241022", "claude-3-5-sonnet-20241022"],
+            "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview"],
+            "anthropic": ["claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"],
             "local": ["local-model"]
         }
         
