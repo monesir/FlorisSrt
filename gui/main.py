@@ -574,6 +574,12 @@ class AppController:
                     pass
 
 if __name__ == "__main__":
+    import ctypes
+    import os
+    if os.name == 'nt':
+        myappid = 'monesir.florissrt.app.1' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        
     app = QApplication(sys.argv)
     window = MainWindow()
     controller = AppController(window)
