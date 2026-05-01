@@ -257,7 +257,9 @@ class TranslationEngine:
                 last_valid_segments = validation.get('valid_segments', [])
                 if retry_type == "full":
                     current_user_prompt = validator.generate_retry_prompt(user_prompt, validation)
-                t_print(f"Errors detected, processing fix ({attempt+1}/3) [Mode: {retry_type}]...", f"اكتشاف أخطاء في المخرجات، جاري المعالجة ({attempt+1}/3) [نوع التدخل: {retry_type}]...", False)
+                
+                max_str = "∞" if self.infinite_retries else str(max_val_loops)
+                t_print(f"Errors detected, processing fix ({attempt+1}/{max_str}) [Mode: {retry_type}]...", f"اكتشاف أخطاء في المخرجات، جاري المعالجة ({attempt+1}/{max_str}) [نوع التدخل: {retry_type}]...", False)
                 
         # الانهيار الآمن بعد فشل الـ Validator 3 مرات
         return {"status": "degraded", "segments": chunk['segments']}
