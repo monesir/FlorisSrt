@@ -1,5 +1,6 @@
 import time
 import json
+import re
 from datetime import datetime
 from openai import OpenAI
 
@@ -115,8 +116,38 @@ class TranslationEngine:
             system_prompt += "\n\nCRITICAL TRANSLATION STYLE:\nYou MUST translate the dialogues into modern Colloquial Arabic (العامية)، focusing on natural, everyday conversational flow rather than rigid Standard Arabic. Use regional slang where appropriate if the character speaks casually, but keep the core meaning intact. For formal characters, you may use a slightly elevated colloquial tone."
             
         if project_data.get('characters') and project_data['characters'].get('characters'):
-            system_prompt += f"\n\nCHARACTERS:\n{json.dumps(project_data['characters'], ensure_ascii=False)}"
+            # Smart Character Matcher
+            all_text = ""
+            if chunk.get('context_before'):
+                all_text += " ".join([s.get('Text', '') for s in chunk['context_before']]) + " "
+            all_text += " ".join([s.get('Text', '') for s in chunk['segments']]) + " "
+            if chunk.get('context_after'):
+                all_text += " ".join([s.get('Text', '') for s in chunk['context_after']])
             
+            all_text_lower = all_text.lower()
+            matched_characters = []
+            
+            for char in project_data['characters']['characters']:
+                char_name = char.get('name', '')
+                if not char_name: continue
+                
+                # Split character name into parts (e.g., "Klein Moretti" -> ["Klein", "Moretti", "Klein Moretti"])
+                name_parts = char_name.lower().split()
+                name_parts.append(char_name.lower())
+                
+                found = False
+                for part in name_parts:
+                    if len(part) > 2:
+                        pattern = r'\b' + re.escape(part) + r'\b'
+                        if re.search(pattern, all_text_lower):
+                            found = True
+                            break
+                            
+                if found:
+                    matched_characters.append(char)
+                    
+            if matched_characters:
+                system_prompt += f"\n\nCHARACTERS (Detected in context):\n{json.dumps({'characters': matched_characters}, ensure_ascii=False)}"            
         # حفظ البرومبت للـ Debug
         try:
             with open("debug_last_prompt.txt", "w", encoding="utf-8") as f:
