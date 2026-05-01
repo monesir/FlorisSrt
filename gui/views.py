@@ -559,7 +559,6 @@ class UsageTab(QWidget):
         left_lay.addWidget(QLabel("Model:"))
         self.model_input = QComboBox()
         self.model_input.setEditable(True)
-        self.model_input.addItems(["gpt-4o", "gpt-4o-mini", "deepseek-chat", "claude-3-5-sonnet", "gemini-2.5-pro"])
         left_lay.addWidget(self.model_input)
         
         left_lay.addWidget(QLabel("Input / 1M tokens ($):"))

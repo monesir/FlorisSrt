@@ -175,12 +175,16 @@ class AppController:
         self.window.usage_tab.btn_export.clicked.connect(self._export_usage_csv)
         self.window.usage_tab.btn_clear.clicked.connect(self._clear_usage_ledger)
         self.window.usage_tab.provider_input.currentTextChanged.connect(self._on_pricing_key_changed)
+        self.window.usage_tab.provider_input.currentTextChanged.connect(self._update_usage_model_dropdown)
         self.window.usage_tab.model_input.currentTextChanged.connect(self._on_pricing_key_changed)
         self.window.usage_tab.filter_project.currentTextChanged.connect(self._refresh_usage_tab)
         self.window.usage_tab.filter_model.currentTextChanged.connect(self._refresh_usage_tab)
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
+        
+        # Initialize usage models
+        self._update_usage_model_dropdown(self.window.usage_tab.provider_input.currentText())
         
         self.batch_queue = []
         self.total_batch = 0
@@ -424,6 +428,24 @@ class AppController:
         self.window.usage_tab.lbl_total_cost.setText(f"Total Cost: <b>${total_cost:.4f}</b>")
         self.window.usage_tab.lbl_run_cost.setText(f"This Run: <b>${run_cost:.4f}</b>")
         
+        self._on_pricing_key_changed()
+
+    def _update_usage_model_dropdown(self, provider):
+        provider = provider.lower().strip()
+        cb_model = self.window.usage_tab.model_input
+        
+        provider_models = {
+            "openai": ["gpt-4o", "gpt-4o-mini", "o1", "o1-mini", "o3-mini"],
+            "deepseek": ["deepseek-chat", "deepseek-reasoner"],
+            "anthropic": ["claude-3-5-sonnet", "claude-3-opus", "claude-3-5-haiku", "claude-3-7-sonnet"],
+            "google": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-pro-exp"]
+        }
+        
+        models = provider_models.get(provider, [])
+        cb_model.blockSignals(True)
+        cb_model.clear()
+        cb_model.addItems(models)
+        cb_model.blockSignals(False)
         self._on_pricing_key_changed()
 
     def _on_pricing_key_changed(self):
