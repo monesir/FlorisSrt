@@ -340,5 +340,8 @@ def main():
     else:
         t_print(f"Not all chunks completed (Expected {len(raw_segments)}, Got {len(all_final_segments)}), final file not built.", f"لم تكتمل كافة الشنكات (المطلوب {len(raw_segments)}، المتاح {len(all_final_segments)})، لم يتم بناء الملف النهائي بعد.", False)
 
+    # Flush any remaining usage events to disk
+    engine.usage_tracker.flush()
+
 if __name__ == "__main__":
     main()

@@ -584,14 +584,38 @@ class UsageTab(QWidget):
         right_panel = QWidget()
         right_lay = QVBoxLayout(right_panel)
         
+        # Filters
+        filter_lay = QHBoxLayout()
+        filter_lay.addWidget(QLabel("Project:"))
+        self.filter_project = QComboBox()
+        self.filter_project.setEditable(True)
+        self.filter_project.addItem("All")
+        filter_lay.addWidget(self.filter_project)
+        
+        filter_lay.addWidget(QLabel("Model:"))
+        self.filter_model = QComboBox()
+        self.filter_model.setEditable(True)
+        self.filter_model.addItem("All")
+        filter_lay.addWidget(self.filter_model)
+        
+        filter_lay.addStretch()
+        right_lay.addLayout(filter_lay)
+        
         # Summary Header
         sum_lay = QHBoxLayout()
         self.lbl_total_tokens = QLabel("Total Tokens: <b>0</b>")
         self.lbl_total_cost = QLabel("Total Cost: <b>$0.00</b>")
+        self.lbl_run_cost = QLabel("This Run: <b>$0.00</b>")
+        
         self.lbl_total_tokens.setStyleSheet("font-size: 14px;")
         self.lbl_total_cost.setStyleSheet("font-size: 14px; color: #4CAF50;")
+        self.lbl_run_cost.setStyleSheet("font-size: 14px; color: #2196F3; font-weight: bold;")
+        
         sum_lay.addWidget(self.lbl_total_tokens)
+        sum_lay.addWidget(QLabel(" | "))
         sum_lay.addWidget(self.lbl_total_cost)
+        sum_lay.addWidget(QLabel(" | "))
+        sum_lay.addWidget(self.lbl_run_cost)
         sum_lay.addStretch()
         
         self.btn_refresh = QPushButton("Refresh")

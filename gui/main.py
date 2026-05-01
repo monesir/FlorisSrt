@@ -176,6 +176,8 @@ class AppController:
         self.window.usage_tab.btn_clear.clicked.connect(self._clear_usage_ledger)
         self.window.usage_tab.provider_input.textChanged.connect(self._on_pricing_key_changed)
         self.window.usage_tab.model_input.textChanged.connect(self._on_pricing_key_changed)
+        self.window.usage_tab.filter_project.currentTextChanged.connect(self._refresh_usage_tab)
+        self.window.usage_tab.filter_model.currentTextChanged.connect(self._refresh_usage_tab)
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
@@ -351,21 +353,51 @@ class AppController:
 
     # --- Usage Tab Logic ---
     def _refresh_usage_tab(self):
-        ledger = self.usage_tracker.get_ledger()
+        ledger = self.usage_tracker.get_ledger(limit=1000)
         table = self.window.usage_tab.table
         table.setRowCount(0)
+        
+        filter_proj = self.window.usage_tab.filter_project.currentText()
+        filter_mod = self.window.usage_tab.filter_model.currentText()
+        
+        # Populate filter combo boxes silently
+        projects = {"All"}
+        models = {"All"}
+        for entry in ledger:
+            projects.add(entry.get("project", "unknown"))
+            models.add(f'{entry.get("provider", "unknown")}:{entry.get("model", "unknown")}')
+            
+        cb_proj = self.window.usage_tab.filter_project
+        cb_mod = self.window.usage_tab.filter_model
+        
+        cb_proj.blockSignals(True)
+        cb_mod.blockSignals(True)
+        if cb_proj.count() < len(projects):
+            cb_proj.clear()
+            cb_proj.addItems(sorted(list(projects)))
+            cb_proj.setCurrentText(filter_proj if filter_proj in projects else "All")
+        if cb_mod.count() < len(models):
+            cb_mod.clear()
+            cb_mod.addItems(sorted(list(models)))
+            cb_mod.setCurrentText(filter_mod if filter_mod in models else "All")
+        cb_proj.blockSignals(False)
+        cb_mod.blockSignals(False)
         
         total_tokens = 0
         total_cost = 0.0
         
         for entry in ledger:
-            row = table.rowCount()
-            table.insertRow(row)
-            
             project = entry.get("project", "unknown")
             episode = entry.get("episode", "unknown")
-            model = entry.get("model", "unknown")
             prov = entry.get("provider", "unknown")
+            model = entry.get("model", "unknown")
+            full_model = f"{prov}:{model}"
+            
+            if filter_proj != "All" and filter_proj != project:
+                continue
+            if filter_mod != "All" and filter_mod != full_model:
+                continue
+                
             prompt_tokens = entry.get("prompt_tokens", 0)
             comp_tokens = entry.get("completion_tokens", 0)
             est = entry.get("estimated", False)
@@ -375,16 +407,22 @@ class AppController:
             total_tokens += (prompt_tokens + comp_tokens)
             total_cost += cost
             
+            row = table.rowCount()
+            table.insertRow(row)
             table.setItem(row, 0, QTableWidgetItem(project))
             table.setItem(row, 1, QTableWidgetItem(episode))
-            table.setItem(row, 2, QTableWidgetItem(f"{prov}:{model}"))
+            table.setItem(row, 2, QTableWidgetItem(full_model))
             table.setItem(row, 3, QTableWidgetItem(str(prompt_tokens)))
             table.setItem(row, 4, QTableWidgetItem(str(comp_tokens)))
             table.setItem(row, 5, QTableWidgetItem(f"${cost:.4f}"))
             table.setItem(row, 6, QTableWidgetItem("Yes" if est else "No"))
             
+        # Update Run Stats
+        run_tokens, run_cost = self.usage_tracker.get_current_run_stats()
+            
         self.window.usage_tab.lbl_total_tokens.setText(f"Total Tokens: <b>{total_tokens:,}</b>")
         self.window.usage_tab.lbl_total_cost.setText(f"Total Cost: <b>${total_cost:.4f}</b>")
+        self.window.usage_tab.lbl_run_cost.setText(f"This Run: <b>${run_cost:.4f}</b>")
         
         self._on_pricing_key_changed()
 
@@ -433,21 +471,34 @@ class AppController:
         if not path:
             return
             
-        ledger = self.usage_tracker.get_ledger()
+        ledger = self.usage_tracker.get_ledger(limit=None) # Export all, or we can export filtered
+        
+        filter_proj = self.window.usage_tab.filter_project.currentText()
+        filter_mod = self.window.usage_tab.filter_model.currentText()
+        
         try:
             with open(path, 'w', newline='', encoding='utf-8') as f:
                 writer = csv.writer(f)
-                writer.writerow(["Timestamp", "Project", "Episode", "Provider", "Model", "Prompt Tokens", "Completion Tokens", "Cost ($)", "Estimated"])
+                writer.writerow(["Timestamp", "Run ID", "Project", "Episode", "Provider", "Model", "Prompt Tokens", "Completion Tokens", "Cost ($)", "Estimated"])
                 for entry in ledger:
+                    project = entry.get("project", "")
                     prov = entry.get("provider", "")
                     model = entry.get("model", "")
+                    full_model = f"{prov}:{model}"
+                    
+                    if filter_proj != "All" and filter_proj != project:
+                        continue
+                    if filter_mod != "All" and filter_mod != full_model:
+                        continue
+                        
                     p_tok = entry.get("prompt_tokens", 0)
                     c_tok = entry.get("completion_tokens", 0)
                     cost = self.usage_tracker.calculate_cost(prov, model, p_tok, c_tok)
                     
                     writer.writerow([
                         entry.get("timestamp", ""),
-                        entry.get("project", ""),
+                        entry.get("run_id", ""),
+                        project,
                         entry.get("episode", ""),
                         prov,
                         model,
