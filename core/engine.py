@@ -155,7 +155,12 @@ class TranslationEngine:
                     
             if matched_characters:
                 system_prompt += f"\n\nCHARACTERS (Detected in context):\n{json.dumps({'characters': matched_characters}, ensure_ascii=False)}"
-                system_prompt += "\nCRITICAL RULE: You MUST translate character names exactly as provided in the 'arabic_name' field! Also strictly respect their 'gender'."
+                
+                has_arabic_names = any(c.get('arabic_name') for c in matched_characters)
+                if has_arabic_names:
+                    system_prompt += "\nCRITICAL RULE: You MUST translate character names exactly as provided in the 'arabic_name' field! Also strictly respect their 'gender'."
+                else:
+                    system_prompt += "\nCRITICAL RULE: You MUST strictly respect the 'gender' of these characters when translating dialogues referring to them."
         # حفظ البرومبت للـ Debug
         try:
             with open("debug_last_prompt.txt", "w", encoding="utf-8") as f:
