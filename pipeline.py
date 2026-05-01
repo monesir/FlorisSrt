@@ -6,6 +6,7 @@ from core.project_resolution import ProjectResolution
 from core.state_manager import StateManager
 from core.chunker import Chunker
 from core.engine import TranslationEngine
+from core.translation_cache import TranslationCache
 from parsers.subtitle_parser import SubtitleParser
 from parsers.normalizer import Normalizer
 from parsers.rebuilder import Rebuilder
@@ -119,6 +120,7 @@ def main():
                 combined_glossary[k_lower] = v
                 
     glossary_matcher = GlossaryMatcher(combined_glossary)
+    translation_cache = TranslationCache(proj_info['project_dir'])
     
     # Load Agent Prompts
     agents_prompt_path = os.path.join('agents', 'AGENTS.md')
@@ -175,14 +177,53 @@ def main():
         else:
             agents_prompt_temp = agents_prompt
             
-        # Run Pipeline
-        result = engine.run_chunk_pipeline(
-            chunk_payload, 
-            project_data, 
-            agents_prompt_temp, 
-            validator, 
-            constraint_engine
+        # Extract Cached Translations
+        untranslated_segments, cached_translations = translation_cache.extract_cached_segments(
+            chunk_payload['segments'], raw_segments
         )
+        
+        if not untranslated_segments:
+            t_print("All segments matched in cache! Skipping LLM... | تم إيجاد كل الأسطر في الذاكرة! جاري تخطي الذكاء الاصطناعي...")
+            final_segs = []
+            for seg in chunk_payload['segments']:
+                seg_copy = dict(seg)
+                seg_copy['translated'] = cached_translations[seg['id']]
+                final_segs.append(seg_copy)
+                
+            result = {
+                "status": "success",
+                "segments": final_segs,
+                "terms_detected": []
+            }
+        else:
+            original_chunk_segments = chunk_payload['segments']
+            chunk_payload['segments'] = untranslated_segments
+            
+            # Run Pipeline
+            result = engine.run_chunk_pipeline(
+                chunk_payload, 
+                project_data, 
+                agents_prompt_temp, 
+                validator, 
+                constraint_engine
+            )
+            
+            # Merge back if success or degraded
+            if result['status'] in ['success', 'degraded']:
+                merged_segments = []
+                untranslated_map = {seg['id']: seg for seg in result.get('segments', [])}
+                for seg in original_chunk_segments:
+                    if seg['id'] in cached_translations:
+                        seg_copy = dict(seg)
+                        seg_copy['translated'] = cached_translations[seg['id']]
+                        merged_segments.append(seg_copy)
+                    elif seg['id'] in untranslated_map:
+                        merged_segments.append(untranslated_map[seg['id']])
+                    else:
+                        merged_segments.append(seg)
+                result['segments'] = merged_segments
+                
+            chunk_payload['segments'] = original_chunk_segments
         
         # Update State
         state_manager.save_chunk(i, result)
@@ -190,6 +231,8 @@ def main():
         if result['status'] == 'success':
             state['completed_chunks'].append(i)
             t_print(f"✅ Chunk {i+1} success | ✅ نجاح الشنك {i+1}")
+            
+            translation_cache.add_translations(result['segments'], raw_segments)
             
             # تحديث الـ Term Memory آلياً
             terms = result.get('terms_detected', [])
