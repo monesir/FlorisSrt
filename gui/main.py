@@ -8,7 +8,7 @@ import urllib.error
 from datetime import datetime
 from PySide6.QtWidgets import QApplication, QFileDialog, QMessageBox, QTableWidgetItem, QComboBox, QCheckBox, QWidget, QHBoxLayout
 from PySide6.QtCore import QTimer, Qt, QProcess, QThread, Signal
-from views import MainWindow
+from views import MainWindow, QuickStartDialog
 from services import ProjectService, ConfigService, RunnerService
 from core.state_manager import StateManager
 from parsers.rebuilder import Rebuilder
@@ -161,6 +161,8 @@ class AppController:
         self.window.run_tab.prompt_mode_cb.currentTextChanged.connect(self._on_prompt_mode_changed)
         self.window.run_tab.save_custom_prompts_btn.clicked.connect(self._save_config)
         
+        self.window.action_quick_start.triggered.connect(self._show_quick_start)
+        
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
         
@@ -237,6 +239,10 @@ class AppController:
         else:
             self.window.run_tab.lbl_prompt_warning.hide()
             self.window.run_tab.custom_prompt_group.hide()
+            
+    def _show_quick_start(self):
+        dialog = QuickStartDialog(self.window)
+        dialog.exec()
             
     def _on_tab_changed(self, index):
         current_widget = self.window.tabs.currentWidget()

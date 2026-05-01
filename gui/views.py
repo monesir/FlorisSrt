@@ -472,6 +472,69 @@ class AnalyzeTab(QWidget):
         bot_lay.addWidget(self.btn_export)
         layout.addLayout(bot_lay)
 
+class QuickStartDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setWindowTitle("Quick Start Workflow")
+        self.resize(700, 500)
+        
+        layout = QVBoxLayout(self)
+        
+        text_view = QTextEdit()
+        text_view.setReadOnly(True)
+        
+        html_content = """
+        <h2>دليل المستخدم المبسط (Quick Start Workflow)</h2>
+        <p>مرحباً بك في <b>FlorisSrt</b>! هذا الدليل السريع سيشرح لك أفضل خط سير عمل (Workflow) للحصول على أقصى جودة بأقل مجهود:</p>
+        
+        <h3>الخطوة الأولى: التهيئة والإعداد (Settings)</h3>
+        <ol>
+            <li>اذهب إلى نافذة <b>Settings</b>.</li>
+            <li>اختر مزود الخدمة (مثلاً DeepSeek أو OpenAI) وأدخل <b>API Key</b> الخاص بك.</li>
+            <li>اختر <b>Translation Style</b> (فصحى، عامية، الخ).</li>
+            <li>اضغط <b>Save</b> ثم <b>Test Connection</b> للتأكد من أن اتصالك سليم.</li>
+        </ol>
+
+        <h3>الخطوة الثانية: استخراج البيانات والأسماء (Pre-Analyze) (اختياري لكنه مهم للأنمي)</h3>
+        <ol>
+            <li>اذهب إلى نافذة <b>Pre-Analyze (Extraction)</b>.</li>
+            <li>اختر ملف أو مجلد الترجمة (SRT/ASS).</li>
+            <li>اختر مسار مشروع جديد (مثال: projects/MyAnime).</li>
+            <li>اضغط <b>Start Analysis</b>. <br><i>هذا سيجعل الذكاء الاصطناعي يقرأ الملف بالكامل ويستخرج أسماء الشخصيات والمصطلحات ليحفظها في المشروع، لضمان توحيد الأسماء في كل الحلقات.</i></li>
+        </ol>
+
+        <h3>الخطوة الثالثة: مراجعة الأسماء (Data Editor)</h3>
+        <ol>
+            <li>اذهب إلى نافذة <b>Data Editor</b> وافتح مشروعك.</li>
+            <li>قم بمراجعة الشخصيات (Characters) والمصطلحات (Glossary).</li>
+            <li>عدّل الترجمة المقترحة للأسماء إذا لم تعجبك، ثم اضغط <b>Save Data</b>.</li>
+        </ol>
+
+        <h3>الخطوة الرابعة: الترجمة الفعلية (Run)</h3>
+        <ol>
+            <li>اذهب إلى نافذة <b>Run</b>.</li>
+            <li>قم بسحب وإفلات ملف الترجمة، وسيتم اكتشاف مشروعك تلقائياً إذا قمت بالخطوات السابقة.</li>
+            <li>تأكد من اختيار <b>Default Mode</b> في الـ System Prompt (إلا إذا كنت تعرف ما تفعله).</li>
+            <li>اضغط <b>Start</b> واترك النظام يترجم الحلقة بالكامل.</li>
+        </ol>
+
+        <h3>الخطوة الخامسة: المراجعة النهائية (Review & Post-Edit)</h3>
+        <ol>
+            <li>الآن وبعد انتهاء الترجمة، اذهب إلى <b>Review & Post-Edit</b>.</li>
+            <li>افتح الملف المترجم (ستجده في مجلد episodes داخل مشروعك).</li>
+            <li>قم بمراجعة الأسطر جنباً إلى جنب (عربي وإنجليزي). يمكنك تعديل أي خطأ هنا.</li>
+            <li>اضغط <b>Save Export</b> للحصول على ملفك النهائي!</li>
+        </ol>
+        <hr>
+        <p><i>💡 تلميح: لا تتردد في استخدام وضع الـ Custom Prompts إذا أردت توجيه الموديل بأسلوب معين للترجمة!</i></p>
+        """
+        text_view.setHtml(html_content)
+        layout.addWidget(text_view)
+        
+        btn_close = QPushButton("Got it! إغلاق")
+        btn_close.clicked.connect(self.accept)
+        layout.addWidget(btn_close)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -486,6 +549,11 @@ class MainWindow(QMainWindow):
         
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)
+        
+        # Menu Bar
+        menu_bar = self.menuBar()
+        help_menu = menu_bar.addMenu("Help")
+        self.action_quick_start = help_menu.addAction("Quick Start")
         
         self.run_tab = RunTab()
         self.settings_tab = SettingsTab()
