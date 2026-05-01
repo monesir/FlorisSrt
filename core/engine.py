@@ -30,7 +30,7 @@ class TranslationEngine:
     يحتوي على طبقة (Fault-Tolerant) للتعامل مع الـ Timeouts و הـ Rate Limits بأسلوب
     Exponential Backoff، وحماية الـ Circuit Breaker.
     """
-    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3, infinite_retries=False):
+    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3, infinite_retries=False, project_name="unknown", episode_name="unknown"):
         global log_lang
         log_lang = log_language
         self.translation_style = translation_style
@@ -38,6 +38,9 @@ class TranslationEngine:
         self.timeout = timeout
         self.max_retries = max_retries
         self.infinite_retries = infinite_retries
+        self.project_name = project_name
+        self.episode_name = episode_name
+        self.usage_tracker = UsageTracker()
         
         if provider == "deepseek" and not base_url:
             base_url = "https://api.deepseek.com"
@@ -75,16 +78,32 @@ class TranslationEngine:
         )
         usage = response.usage
         usage_dict = {
-            "prompt_tokens": usage.prompt_tokens if usage else 0,
-            "completion_tokens": usage.completion_tokens if usage else 0,
-            "total_tokens": usage.total_tokens if usage else 0,
+            "prompt_tokens": usage.prompt_tokens if usage and hasattr(usage, 'prompt_tokens') else 0,
+            "completion_tokens": usage.completion_tokens if usage and hasattr(usage, 'completion_tokens') else 0,
+            "total_tokens": usage.total_tokens if usage and hasattr(usage, 'total_tokens') else 0,
             "cached_tokens": 0
         }
         
+        estimated = False
+        if not usage_dict["prompt_tokens"]:
+            usage_dict["prompt_tokens"] = len(system_prompt + user_prompt) // 4
+            usage_dict["completion_tokens"] = len(response.choices[0].message.content) // 4
+            estimated = True
+            
         if usage and hasattr(usage, 'prompt_cache_hit_tokens') and usage.prompt_cache_hit_tokens:
             usage_dict["cached_tokens"] = usage.prompt_cache_hit_tokens
         elif usage and hasattr(usage, 'prompt_tokens_details') and usage.prompt_tokens_details and hasattr(usage.prompt_tokens_details, 'cached_tokens') and usage.prompt_tokens_details.cached_tokens:
             usage_dict["cached_tokens"] = usage.prompt_tokens_details.cached_tokens
+            
+        self.usage_tracker.record_usage(
+            project=self.project_name,
+            episode=self.episode_name,
+            provider=self.provider,
+            model=self.model,
+            prompt_tokens=usage_dict["prompt_tokens"],
+            completion_tokens=usage_dict["completion_tokens"],
+            estimated=estimated
+        )
             
         return {
             "content": response.choices[0].message.content,

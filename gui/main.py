@@ -123,12 +123,15 @@ class ExtractorWorker(QThread):
         except Exception as e:
             self.error_occurred.emit(str(e))
 
+from core.usage_tracker import UsageTracker
+
 class AppController:
     def __init__(self, window: MainWindow):
         self.window = window
         self.project_service = ProjectService()
         self.config_service = ConfigService()
         self.runner = RunnerService()
+        self.usage_tracker = UsageTracker()
         
         self.current_project = None
         self.current_episode = None
@@ -165,6 +168,14 @@ class AppController:
         self.window.run_tab.project_cb.currentTextChanged.connect(self._on_run_project_changed)
         
         self.window.action_quick_start.triggered.connect(self._show_quick_start)
+        
+        # Usage Tab
+        self.window.usage_tab.save_pricing_btn.clicked.connect(self._save_pricing)
+        self.window.usage_tab.btn_refresh.clicked.connect(self._refresh_usage_tab)
+        self.window.usage_tab.btn_export.clicked.connect(self._export_usage_csv)
+        self.window.usage_tab.btn_clear.clicked.connect(self._clear_usage_ledger)
+        self.window.usage_tab.provider_input.textChanged.connect(self._on_pricing_key_changed)
+        self.window.usage_tab.model_input.textChanged.connect(self._on_pricing_key_changed)
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
@@ -261,6 +272,8 @@ class AppController:
                 self.window.tabs.setCurrentIndex(0)
                 return
             self._refresh_review_projects()
+        elif current_widget == self.window.usage_tab:
+            self._refresh_usage_tab()
 
     # --- Pre-Analyze Dropdown Refresh ---
     def _refresh_run_projects(self):
@@ -335,6 +348,117 @@ class AppController:
         
         if episodes:
             self._load_review_data()
+
+    # --- Usage Tab Logic ---
+    def _refresh_usage_tab(self):
+        ledger = self.usage_tracker.get_ledger()
+        table = self.window.usage_tab.table
+        table.setRowCount(0)
+        
+        total_tokens = 0
+        total_cost = 0.0
+        
+        for entry in ledger:
+            row = table.rowCount()
+            table.insertRow(row)
+            
+            project = entry.get("project", "unknown")
+            episode = entry.get("episode", "unknown")
+            model = entry.get("model", "unknown")
+            prov = entry.get("provider", "unknown")
+            prompt_tokens = entry.get("prompt_tokens", 0)
+            comp_tokens = entry.get("completion_tokens", 0)
+            est = entry.get("estimated", False)
+            
+            cost = self.usage_tracker.calculate_cost(prov, model, prompt_tokens, comp_tokens)
+            
+            total_tokens += (prompt_tokens + comp_tokens)
+            total_cost += cost
+            
+            table.setItem(row, 0, QTableWidgetItem(project))
+            table.setItem(row, 1, QTableWidgetItem(episode))
+            table.setItem(row, 2, QTableWidgetItem(f"{prov}:{model}"))
+            table.setItem(row, 3, QTableWidgetItem(str(prompt_tokens)))
+            table.setItem(row, 4, QTableWidgetItem(str(comp_tokens)))
+            table.setItem(row, 5, QTableWidgetItem(f"${cost:.4f}"))
+            table.setItem(row, 6, QTableWidgetItem("Yes" if est else "No"))
+            
+        self.window.usage_tab.lbl_total_tokens.setText(f"Total Tokens: <b>{total_tokens:,}</b>")
+        self.window.usage_tab.lbl_total_cost.setText(f"Total Cost: <b>${total_cost:.4f}</b>")
+        
+        self._on_pricing_key_changed()
+
+    def _on_pricing_key_changed(self):
+        prov = self.window.usage_tab.provider_input.text().strip()
+        model = self.window.usage_tab.model_input.text().strip()
+        key = f"{prov}:{model}"
+        
+        pricing = self.usage_tracker.get_pricing()
+        if key in pricing:
+            self.window.usage_tab.price_in.setValue(pricing[key].get("input_per_million", 0))
+            self.window.usage_tab.price_out.setValue(pricing[key].get("output_per_million", 0))
+        else:
+            self.window.usage_tab.price_in.setValue(0)
+            self.window.usage_tab.price_out.setValue(0)
+
+    def _save_pricing(self):
+        prov = self.window.usage_tab.provider_input.text().strip()
+        model = self.window.usage_tab.model_input.text().strip()
+        if not prov or not model:
+            QMessageBox.warning(self.window, "Error", "Provider and Model cannot be empty.")
+            return
+            
+        key = f"{prov}:{model}"
+        pricing = self.usage_tracker.get_pricing()
+        
+        if key not in pricing:
+            pricing[key] = {}
+            
+        pricing[key]["input_per_million"] = self.window.usage_tab.price_in.value()
+        pricing[key]["output_per_million"] = self.window.usage_tab.price_out.value()
+        
+        self.usage_tracker.save_pricing(pricing)
+        QMessageBox.information(self.window, "Success", "Pricing saved successfully.")
+        self._refresh_usage_tab()
+
+    def _clear_usage_ledger(self):
+        reply = QMessageBox.question(self.window, "Clear Ledger", "Are you sure you want to permanently clear all usage data?", QMessageBox.Yes | QMessageBox.No)
+        if reply == QMessageBox.Yes:
+            self.usage_tracker.clear_ledger()
+            self._refresh_usage_tab()
+
+    def _export_usage_csv(self):
+        import csv
+        path, _ = QFileDialog.getSaveFileName(self.window, "Export Usage to CSV", "usage_export.csv", "CSV Files (*.csv)")
+        if not path:
+            return
+            
+        ledger = self.usage_tracker.get_ledger()
+        try:
+            with open(path, 'w', newline='', encoding='utf-8') as f:
+                writer = csv.writer(f)
+                writer.writerow(["Timestamp", "Project", "Episode", "Provider", "Model", "Prompt Tokens", "Completion Tokens", "Cost ($)", "Estimated"])
+                for entry in ledger:
+                    prov = entry.get("provider", "")
+                    model = entry.get("model", "")
+                    p_tok = entry.get("prompt_tokens", 0)
+                    c_tok = entry.get("completion_tokens", 0)
+                    cost = self.usage_tracker.calculate_cost(prov, model, p_tok, c_tok)
+                    
+                    writer.writerow([
+                        entry.get("timestamp", ""),
+                        entry.get("project", ""),
+                        entry.get("episode", ""),
+                        prov,
+                        model,
+                        p_tok,
+                        c_tok,
+                        f"{cost:.4f}",
+                        entry.get("estimated", False)
+                    ])
+            QMessageBox.information(self.window, "Success", f"Data exported successfully to:\n{path}")
+        except Exception as e:
+            QMessageBox.critical(self.window, "Export Error", f"Failed to export CSV:\n{e}")
 
     def _load_review_data(self):
         project = self.window.review_tab.project_cb.currentText()

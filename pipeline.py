@@ -68,6 +68,16 @@ def main():
     sub_parser = SubtitleParser()
     normalizer = Normalizer()
     chunker = Chunker(chunk_size=20)
+
+    validator = Validator()
+    constraint_engine = ConstraintEngine()
+    rebuilder = Rebuilder()
+
+    # 1. Project Resolution
+    t_print(f"Analyzing project path for file: {args.input}...", f"جاري تحليل مسار المشروع لملف: {args.input}...", False)
+    proj_info = resolver.resolve_project(args.input, force_project_name=args.project_name)
+    t_print(f"✅ Project: {proj_info['project']} | Episode: {proj_info['episode']}", f"✅ الأنمي: {proj_info['project']} | الحلقة: {proj_info['episode']}", False)
+    
     engine = TranslationEngine(
         api_key=args.api_key, 
         provider=args.provider, 
@@ -78,16 +88,10 @@ def main():
         force_single_line=args.force_single_line,
         timeout=args.timeout,
         max_retries=args.max_retries,
-        infinite_retries=args.infinite_retries
+        infinite_retries=args.infinite_retries,
+        project_name=proj_info['project'],
+        episode_name=proj_info['episode']
     )
-    validator = Validator()
-    constraint_engine = ConstraintEngine()
-    rebuilder = Rebuilder()
-
-    # 1. Project Resolution
-    t_print(f"Analyzing project path for file: {args.input}...", f"جاري تحليل مسار المشروع لملف: {args.input}...", False)
-    proj_info = resolver.resolve_project(args.input, force_project_name=args.project_name)
-    t_print(f"✅ Project: {proj_info['project']} | Episode: {proj_info['episode']}", f"✅ الأنمي: {proj_info['project']} | الحلقة: {proj_info['episode']}", False)
     
     # 2. State Management
     state_manager = StateManager(proj_info['episode_path'])

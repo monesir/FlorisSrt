@@ -2,7 +2,7 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton, Q
                              QLabel, QLineEdit, QProgressBar, QPlainTextEdit, 
                              QFormLayout, QComboBox, QSpinBox, QTableWidget, 
                              QTableWidgetItem, QHeaderView, QTextEdit, QCheckBox, 
-                             QTabWidget, QMainWindow, QStatusBar, QAbstractItemView, QSizePolicy, QDialog)
+                             QTabWidget, QMainWindow, QStatusBar, QAbstractItemView, QSizePolicy, QDialog, QDoubleSpinBox)
 from PySide6.QtCore import Qt
 from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
 import os
@@ -540,6 +540,79 @@ class QuickStartDialog(QDialog):
         btn_close.clicked.connect(self.accept)
         layout.addWidget(btn_close)
 
+class UsageTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QHBoxLayout(self)
+        
+        # Left Panel (Pricing)
+        left_panel = QWidget()
+        left_lay = QVBoxLayout(left_panel)
+        left_lay.addWidget(QLabel("<b>Pricing Engine</b>"))
+        
+        left_lay.addWidget(QLabel("Provider:"))
+        self.provider_input = QLineEdit("openai")
+        self.provider_input.setPlaceholderText("e.g. openai")
+        left_lay.addWidget(self.provider_input)
+        
+        left_lay.addWidget(QLabel("Model:"))
+        self.model_input = QLineEdit("gpt-4o")
+        self.model_input.setPlaceholderText("e.g. gpt-4o")
+        left_lay.addWidget(self.model_input)
+        
+        left_lay.addWidget(QLabel("Input / 1M tokens ($):"))
+        self.price_in = QDoubleSpinBox()
+        self.price_in.setRange(0, 1000)
+        self.price_in.setDecimals(4)
+        left_lay.addWidget(self.price_in)
+        
+        left_lay.addWidget(QLabel("Output / 1M tokens ($):"))
+        self.price_out = QDoubleSpinBox()
+        self.price_out.setRange(0, 1000)
+        self.price_out.setDecimals(4)
+        left_lay.addWidget(self.price_out)
+        
+        self.save_pricing_btn = QPushButton("Save Pricing")
+        left_lay.addWidget(self.save_pricing_btn)
+        
+        left_lay.addWidget(QLabel("<br><i>Select provider/model<br>to view or set prices.</i>"))
+        
+        left_lay.addStretch()
+        layout.addWidget(left_panel, 1)
+        
+        # Right Panel (Ledger Table & Summary)
+        right_panel = QWidget()
+        right_lay = QVBoxLayout(right_panel)
+        
+        # Summary Header
+        sum_lay = QHBoxLayout()
+        self.lbl_total_tokens = QLabel("Total Tokens: <b>0</b>")
+        self.lbl_total_cost = QLabel("Total Cost: <b>$0.00</b>")
+        self.lbl_total_tokens.setStyleSheet("font-size: 14px;")
+        self.lbl_total_cost.setStyleSheet("font-size: 14px; color: #4CAF50;")
+        sum_lay.addWidget(self.lbl_total_tokens)
+        sum_lay.addWidget(self.lbl_total_cost)
+        sum_lay.addStretch()
+        
+        self.btn_refresh = QPushButton("Refresh")
+        self.btn_export = QPushButton("Export CSV")
+        self.btn_clear = QPushButton("Clear Ledger")
+        self.btn_clear.setStyleSheet("color: #ff4c4c;")
+        sum_lay.addWidget(self.btn_refresh)
+        sum_lay.addWidget(self.btn_export)
+        sum_lay.addWidget(self.btn_clear)
+        right_lay.addLayout(sum_lay)
+        
+        # Table
+        self.table = QTableWidget(0, 7)
+        self.table.setHorizontalHeaderLabels(["Project", "Episode", "Model", "In", "Out", "Cost", "Est."])
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        right_lay.addWidget(self.table)
+        
+        layout.addWidget(right_panel, 3)
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -561,16 +634,18 @@ class MainWindow(QMainWindow):
         self.action_quick_start = help_menu.addAction("Quick Start")
         
         self.run_tab = RunTab()
-        self.settings_tab = SettingsTab()
+        self.analyze_tab = AnalyzeTab()
         self.data_editor_tab = DataEditorTab()
         self.review_tab = ReviewTab()
-        self.analyze_tab = AnalyzeTab()
+        self.usage_tab = UsageTab()
+        self.settings_tab = SettingsTab()
         
         self.tabs.addTab(self.run_tab, "Run")
         self.tabs.addTab(self.analyze_tab, "Pre-Analyze (Extraction)")
-        self.tabs.addTab(self.settings_tab, "Settings")
         self.tabs.addTab(self.data_editor_tab, "Data Editor")
         self.tabs.addTab(self.review_tab, "Review & Post-Edit")
+        self.tabs.addTab(self.usage_tab, "Cost & Usage")
+        self.tabs.addTab(self.settings_tab, "Settings")
         
         self.status_bar = QStatusBar()
         self.setStatusBar(self.status_bar)
