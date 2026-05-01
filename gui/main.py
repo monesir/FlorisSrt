@@ -149,6 +149,8 @@ class AppController:
         self.log_timer = QTimer()
         self.log_timer.timeout.connect(self._poll_progress)
         self.log_timer.start(1000)
+        
+        self._refresh_run_projects()
 
     def _setup_connections(self):
         self.window.run_tab.browse_btn.clicked.connect(self._browse_file)
