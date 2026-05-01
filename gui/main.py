@@ -96,7 +96,7 @@ class ExtractorWorker(QThread):
                 infinite_retries=infinite
             )
             
-            merged_result = {"characters": [], "terms": []}
+            merged_result = {"characters": [], "terms": [], "total_tokens": 0}
             total_files = len(self.file_paths)
             
             for f_idx, fp in enumerate(self.file_paths):
@@ -113,8 +113,10 @@ class ExtractorWorker(QThread):
                 
                 merged_result["characters"].extend(res.get("characters", []))
                 merged_result["terms"].extend(res.get("terms", []))
+                merged_result["total_tokens"] += res.get("total_tokens", 0)
                 
             self.progress_updated.emit(100, 100)
+            self.log_updated.emit(f"\n============================\nExtraction completed!\nTotal tokens used (All files): {merged_result['total_tokens']}\n============================")
             self.finished_extraction.emit(merged_result)
         except Exception as e:
             self.error_occurred.emit(str(e))

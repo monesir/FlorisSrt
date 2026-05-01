@@ -143,6 +143,7 @@ If none are found, return empty arrays."""
         
         all_chars = {}
         all_terms = {}
+        total_tokens_used = 0
         
         for idx, chunk in enumerate(chunks):
             if progress_callback:
@@ -160,9 +161,10 @@ If none are found, return empty arrays."""
             if "error" in result:
                 if log_callback: log_callback(f"Error in chunk {idx+1}: {result['error']}")
                 
-            if "usage" in result and result["usage"] and log_callback:
+            if "usage" in result and result["usage"]:
                 u = result["usage"]
-                log_callback(f"Tokens: {u.get('prompt_tokens')} IN | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
+                total_tokens_used += u.get('total_tokens', 0)
+                if log_callback: log_callback(f"Tokens: {u.get('prompt_tokens')} IN | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
             
             # Merge Results
             chars_list = result.get('characters') or []
@@ -179,5 +181,6 @@ If none are found, return empty arrays."""
                     
         return {
             "characters": list(all_chars.values()),
-            "terms": list(all_terms.values())
+            "terms": list(all_terms.values()),
+            "total_tokens": total_tokens_used
         }
