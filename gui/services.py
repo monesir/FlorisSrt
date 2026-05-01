@@ -28,17 +28,16 @@ class ProjectService:
         for project in os.listdir(self.base_dir):
             project_path = os.path.join(self.base_dir, project)
             if os.path.isdir(project_path):
+                episodes = []
                 episodes_dir = os.path.join(project_path, 'episodes')
                 if os.path.exists(episodes_dir):
-                    episodes = []
                     for episode in os.listdir(episodes_dir):
                         episode_path = os.path.join(episodes_dir, episode)
                         if os.path.isdir(episode_path):
                             state_file = os.path.join(episode_path, 'project.json')
                             if os.path.exists(state_file):
                                 episodes.append(episode)
-                    if episodes:
-                        tree[project] = sorted(episodes)
+                tree[project] = sorted(episodes)
         return dict(sorted(tree.items()))
 
     def bootstrap_project(self, project: str, input_path: str) -> None:
