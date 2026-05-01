@@ -84,7 +84,7 @@ class ConfigService:
             "paths": {"glossary": "", "characters": "", "work_context": ""},
             "output": {"folder": ""},
             "execution": {"constraint_mode": "balanced", "max_retries": 5, "timeout": 30},
-            "preferences": {"log_language": "Bilingual", "translation_style": "Standard (فصحى)"}
+            "preferences": {"log_language": "Bilingual", "translation_style": "Standard (فصحى)", "force_single_line": False}
         }
 
 class RunnerService(QObject):
@@ -99,7 +99,7 @@ class RunnerService(QObject):
         self.process.finished.connect(self.handle_finished)
         self.process.errorOccurred.connect(self.handle_error)
 
-    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual", translation_style="Standard (فصحى)"):
+    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False):
         if self.process.state() != QProcess.ProcessState.NotRunning:
             return
             
@@ -120,6 +120,8 @@ class RunnerService(QObject):
             args.extend(["--log-language", log_language])
         if translation_style:
             args.extend(["--translation-style", translation_style])
+        if force_single_line:
+            args.append("--force-single-line")
         if resume:
             args.append("--resume")
             

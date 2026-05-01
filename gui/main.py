@@ -388,8 +388,8 @@ class AppController:
         
         if not prov_data.get("name"):
             prov_data["name"] = models.get(new_provider, [""])[0]
-            
-        self.window.settings_tab.model_name.setCurrentText(prov_data.get("name", ""))
+                    self.window.settings_tab.translation_style_cb.setCurrentText(prefs.get("translation_style", "Standard (فصحى)"))
+            self.window.settings_tab.force_single_line.setChecked(prefs.get("force_single_line", False))
         self.window.settings_tab.model_name.blockSignals(False)
         
         self.window.settings_tab.api_key.blockSignals(True)
@@ -442,8 +442,13 @@ class AppController:
         self.config_cache["execution"] = {
             "constraint_mode": st.constraint_mode.currentText(),
             "max_retries": st.max_retries.value(),
-            "timeout": st.timeout.value(),
-            "log_language": st.log_language_cb.currentText()
+            "timeout": st.timeout.value()
+        }
+        
+        self.config_cache["preferences"] = {
+            "log_language": st.log_language_cb.currentText(),
+            "translation_style": st.translation_style_cb.currentText(),
+            "force_single_line": st.force_single_line.isChecked()
         }
         
         self.config_service.save(self.config_cache)
@@ -478,8 +483,21 @@ class AppController:
         provider = self.window.settings_tab.provider_cb.currentText()
         api_key = self.window.settings_tab.api_key.text().strip()
         model_name = self.window.settings_tab.model_name.currentText().strip()
-        log_lang = self.window.settings_tab.log_language_cb.currentText()
-        self.runner.start(path, provider=provider, api_key=api_key, model_name=model_name, resume=False, project_name=getattr(self, 'batch_project_name', None), log_language=log_lang)
+        log_lang = config.get("preferences", {}).get("log_language", "Bilingual")
+        trans_style = config.get("preferences", {}).get("translation_style", "Standard (فصحى)")
+        force_single = config.get("preferences", {}).get("force_single_line", False)
+        
+        self.runner.start(
+            file_path=file_path,
+            provider=provider,
+            api_key=api_key,
+            model_name=model_name,
+            resume=False,
+            project_name=None,
+            log_language=log_lang,
+            translation_style=trans_style,
+            force_single_line=force_single
+        )
 
     def _resume_translation(self):
         path = self.window.run_tab.file_input.text()
@@ -576,6 +594,22 @@ class AppController:
 if __name__ == "__main__":
     import ctypes
     import os
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--pipeline":
+        # PyInstaller subprocess mode
+        sys.argv.pop(1) # Remove --pipeline so pipeline.py argparse works
+        
+        # Add root dir to path so imports work
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if getattr(sys, 'frozen', False):
+            root_dir = sys._MEIPASS
+        sys.path.insert(0, root_dir)
+        
+        import pipeline
+        pipeline.main()
+        sys.exit(0)
+
     if os.name == 'nt':
         myappid = 'monesir.florissrt.app.1' # arbitrary string
         ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)

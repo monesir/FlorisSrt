@@ -45,6 +45,7 @@ def main():
     parser.add_argument("--project-name", help="اسم المشروع الإجباري (لتجاوز الاستخراج من اسم الملف)", default=None)
     parser.add_argument("--log-language", help="Log Language", default="Bilingual")
     parser.add_argument("--translation-style", help="Translation Style (Standard/Colloquial)", default="Standard (فصحى)")
+    parser.add_argument("--force-single-line", action="store_true", help="Force single line output")
     
     args = parser.parse_args()
     
@@ -68,7 +69,8 @@ def main():
         base_url=args.base_url, 
         model_name=args.model_name, 
         log_language=args.log_language,
-        translation_style=args.translation_style
+        translation_style=args.translation_style,
+        force_single_line=args.force_single_line
     )
     validator = Validator()
     constraint_engine = ConstraintEngine()

@@ -142,6 +142,9 @@ class SettingsTab(QWidget):
         self.timeout.setRange(5, 120)
         layout.addRow("Timeout (sec):", self.timeout)
         
+        self.force_single_line = QCheckBox("Force Single Line (No \\n)")
+        layout.addRow("Line Formatting:", self.force_single_line)
+        
         btn_layout = QHBoxLayout()
         self.save_btn = QPushButton("Save Settings")
         self.reset_btn = QPushButton("Reset to Default")
