@@ -23,13 +23,20 @@ FlorisSrt is a highly specialized, context-aware translation pipeline designed f
 - **Python 3.10+**
 - An active API Key for OpenAI, DeepSeek, OpenRouter, or Gemini.
 
-### Setup
-1. Clone the repository:
+### Option 1: Standalone Windows App (Recommended)
+You do not need to install Python.
+1. Go to the [Releases](https://github.com/monesir/FlorisSrt/releases) page.
+2. Download the `FlorisSrt-v1.X.X-Windows.zip` file.
+3. Extract the folder and double-click `FlorisSrt.exe`!
+
+### Option 2: Run from Source Code
+1. Ensure you have **Python 3.10+** installed.
+2. Clone the repository:
    ```cmd
    git clone https://github.com/monesir/FlorisSrt.git
    cd FlorisSrt
    ```
-2. Install the required dependencies:
+3. Install the required dependencies:
    ```cmd
    pip install -r requirements.txt
    ```
@@ -37,7 +44,8 @@ FlorisSrt is a highly specialized, context-aware translation pipeline designed f
 ## 💻 GUI Guide (How to Use)
 
 ### Launching the App
-You can start the graphical user interface by double-clicking the **`FlorisSrt`** shortcut, or by running:
+If you downloaded the standalone App, simply double-click **`FlorisSrt.exe`**.
+If you are running from source, double-click the **`FlorisSrt.lnk`** shortcut, or run:
 ```cmd
 pythonw gui/main.py
 ```
@@ -88,7 +96,14 @@ FlorisSrt organizes lore and terminology on a **per-project basis**. Once a tran
 - **بايثون (Python 3.10+)**
 - مفتاح API نشط (مثل DeepSeek أو OpenAI).
 
-لتشغيل البرنامج بعد تحميله وتثبيت المكتبات `pip install -r requirements.txt`، يمكنك فقط الضغط مرتين على أيقونة `FlorisSrt` (الاختصار الموجود في المجلد) وسيعمل بواجهته الأنيقة مباشرة!
+### 📥 تحميل البرنامج المباشر للمستخدم (يُنصح به)
+لا تحتاج لتثبيت بايثون أو أي برامج أخرى! 
+1. توجه إلى صفحة الـ [Releases](https://github.com/monesir/FlorisSrt/releases).
+2. قم بتحميل الملف المضغوط `FlorisSrt-vX.X.X-Windows.zip`.
+3. فك الضغط، واضغط مرتين على `FlorisSrt.exe` وسيعمل البرنامج مباشرة بواجهته الأنيقة!
+
+### المبرمجين (الشفرة المصدرية)
+لتشغيل البرنامج من الشفرة المصدرية بعد تثبيت المكتبات عبر `pip install -r requirements.txt`، يمكنك فقط الضغط مرتين على اختصار `FlorisSrt` وسيعمل.
 
 ## 💻 دليل استخدام الواجهة (GUI)
 
