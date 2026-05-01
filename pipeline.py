@@ -151,7 +151,7 @@ def main():
     
     agents_prompt = ""
     if args.prompt_mode.lower() == "custom":
-        config_path = os.path.join(PROJECT_ROOT, 'config', 'user_settings.json')
+        config_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'config', 'user_settings.json')
         try:
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = json.load(f)
