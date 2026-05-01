@@ -29,9 +29,10 @@ class TranslationEngine:
     يحتوي على طبقة (Fault-Tolerant) للتعامل مع الـ Timeouts و הـ Rate Limits بأسلوب
     Exponential Backoff، وحماية الـ Circuit Breaker.
     """
-    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual"):
+    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)"):
         global log_lang
         log_lang = log_language
+        self.translation_style = translation_style
         
         if provider == "deepseek" and not base_url:
             base_url = "https://api.deepseek.com"
@@ -109,6 +110,9 @@ class TranslationEngine:
         system_prompt = agents_prompt
         if project_data.get('work_context') and project_data['work_context'].get('description'):
             system_prompt += f"\n\nWORK CONTEXT:\n{json.dumps(project_data['work_context'], ensure_ascii=False)}"
+            
+        if self.translation_style == "Colloquial (عامية)":
+            system_prompt += "\n\nCRITICAL TRANSLATION STYLE:\nYou MUST translate the dialogues into modern Colloquial Arabic (العامية)، focusing on natural, everyday conversational flow rather than rigid Standard Arabic. Use regional slang where appropriate if the character speaks casually, but keep the core meaning intact. For formal characters, you may use a slightly elevated colloquial tone."
             
         if project_data.get('characters') and project_data['characters'].get('characters'):
             system_prompt += f"\n\nCHARACTERS:\n{json.dumps(project_data['characters'], ensure_ascii=False)}"

@@ -4,7 +4,8 @@ from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QPushButton,
                              QTableWidgetItem, QHeaderView, QTextEdit, QCheckBox, 
                              QTabWidget, QMainWindow, QStatusBar, QAbstractItemView)
 from PySide6.QtCore import Qt
-from PySide6.QtGui import QDragEnterEvent, QDropEvent
+from PySide6.QtGui import QDragEnterEvent, QDropEvent, QIcon
+import os
 
 class RunTab(QWidget):
     def __init__(self):
@@ -129,6 +130,10 @@ class SettingsTab(QWidget):
         self.log_language_cb.addItems(["Bilingual", "English", "Arabic"])
         layout.addRow("Log Language:", self.log_language_cb)
         
+        self.translation_style_cb = QComboBox()
+        self.translation_style_cb.addItems(["Standard (فصحى)", "Colloquial (عامية)"])
+        layout.addRow("Translation Style:", self.translation_style_cb)
+        
         self.max_retries = QSpinBox()
         self.max_retries.setRange(1, 10)
         layout.addRow("Max Retries:", self.max_retries)
@@ -227,6 +232,11 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("FlorisSrt")
         self.setMinimumSize(900, 600)
         self.resize(1100, 750)
+        
+        # Set App Icon
+        icon_path = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "assets", "icon.png")
+        if os.path.exists(icon_path):
+            self.setWindowIcon(QIcon(icon_path))
         
         self.tabs = QTabWidget()
         self.setCentralWidget(self.tabs)

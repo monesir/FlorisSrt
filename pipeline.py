@@ -44,6 +44,7 @@ def main():
     parser.add_argument("--max-chunks", type=int, help="الحد الأقصى للشنكات (للتجارب)", default=None)
     parser.add_argument("--project-name", help="اسم المشروع الإجباري (لتجاوز الاستخراج من اسم الملف)", default=None)
     parser.add_argument("--log-language", help="Log Language", default="Bilingual")
+    parser.add_argument("--translation-style", help="Translation Style (Standard/Colloquial)", default="Standard (فصحى)")
     
     args = parser.parse_args()
     
@@ -61,7 +62,14 @@ def main():
     sub_parser = SubtitleParser()
     normalizer = Normalizer()
     chunker = Chunker(chunk_size=20)
-    engine = TranslationEngine(api_key=args.api_key, provider=args.provider, base_url=args.base_url, model_name=args.model_name, log_language=args.log_language)
+    engine = TranslationEngine(
+        api_key=args.api_key, 
+        provider=args.provider, 
+        base_url=args.base_url, 
+        model_name=args.model_name, 
+        log_language=args.log_language,
+        translation_style=args.translation_style
+    )
     validator = Validator()
     constraint_engine = ConstraintEngine()
     rebuilder = Rebuilder()

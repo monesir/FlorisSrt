@@ -83,7 +83,8 @@ class ConfigService:
             "model": {"provider": "openai", "name": "gpt-4o", "api_key": ""},
             "paths": {"glossary": "", "characters": "", "work_context": ""},
             "output": {"folder": ""},
-            "execution": {"constraint_mode": "balanced", "max_retries": 5, "timeout": 30}
+            "execution": {"constraint_mode": "balanced", "max_retries": 5, "timeout": 30},
+            "preferences": {"log_language": "Bilingual", "translation_style": "Standard (فصحى)"}
         }
 
 class RunnerService(QObject):
@@ -98,7 +99,7 @@ class RunnerService(QObject):
         self.process.finished.connect(self.handle_finished)
         self.process.errorOccurred.connect(self.handle_error)
 
-    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual"):
+    def start(self, file_path, provider="openai", api_key="", model_name="", resume=False, project_name=None, log_language="Bilingual", translation_style="Standard (فصحى)"):
         if self.process.state() != QProcess.ProcessState.NotRunning:
             return
             
@@ -110,16 +111,24 @@ class RunnerService(QObject):
         env.insert("PYTHONIOENCODING", "utf-8")
         self.process.setProcessEnvironment(env)
         
-        args = ["-u", pipeline_path, "--input", file_path, "--provider", provider, "--api-key", api_key]
+        args = ["--input", file_path, "--provider", provider, "--api-key", api_key]
         if model_name:
             args.extend(["--model-name", model_name])
         if project_name:
             args.extend(["--project-name", project_name])
         if log_language:
             args.extend(["--log-language", log_language])
+        if translation_style:
+            args.extend(["--translation-style", translation_style])
         if resume:
             args.append("--resume")
-        self.process.start("python", args)
+            
+        if getattr(sys, 'frozen', False):
+            # Running as PyInstaller bundle
+            self.process.start(sys.executable, ["--pipeline"] + args)
+        else:
+            # Running from source
+            self.process.start(sys.executable, ["-u", pipeline_path] + args)
 
     def stop(self):
         if self.process.state() == QProcess.ProcessState.Running:
