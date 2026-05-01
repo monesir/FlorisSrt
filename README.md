@@ -34,36 +34,36 @@ FlorisSrt is a highly specialized, context-aware translation pipeline designed f
    pip install -r requirements.txt
    ```
 
-## 💻 Usage
+## 💻 GUI Guide (How to Use)
 
-### Launching the GUI
-You can start the graphical user interface by double-clicking the `FlorisSrt.lnk` shortcut, or by running the following command in the terminal:
+### Launching the App
+You can start the graphical user interface by double-clicking the **`FlorisSrt`** shortcut, or by running:
 ```cmd
 pythonw gui/main.py
 ```
 
-### 1. Configuration
-Navigate to the **Settings** tab to:
-- Select your preferred LLM Provider (DeepSeek, OpenAI, etc.).
-- Input your API Key.
-- Select the Log Language (Bilingual, English, or Arabic).
+The application is divided into three main tabs:
 
-### 2. Single File Translation
-1. Go to the **Run** tab.
-2. Click **File** and select an `.ass` or `.srt` file.
-3. Click **Start Translation**. 
+### 1. Run Tab (Main Dashboard)
+This is where the magic happens.
+- **File Mode**: Select a single `.ass` or `.srt` file. The system will automatically resolve the anime name and episode number.
+- **Folder Mode (Batch)**: Select an entire directory. The system will line up all subtitle files into a batch queue and translate them one by one. It intelligently skips files that have already been translated.
+- **Resume Button**: If the translation was interrupted or stopped, clicking `Resume` will pick up exactly where it left off, avoiding duplicate token costs.
+- **Live Logs**: Watch the dual-agent translation process in real-time, including context tracking and token usage.
 
-### 3. Batch Directory Translation
-1. Go to the **Run** tab.
-2. Click **Folder** and select a directory containing multiple subtitle files.
-3. The queue will automatically populate and process episodes sequentially.
+### 2. Settings Tab
+Configure your translation engine and parameters.
+- **LLM Provider**: Choose between `openai`, `deepseek`, `openrouter`, or `gemini`.
+- **API Key**: Securely input your API key. It is saved locally and never shared.
+- **Base URL**: If using proxy endpoints or custom models, you can define the API base URL here.
+- **Log Language**: Personalize the live logs to display in English, Arabic, or a Bilingual split format.
 
-### 4. Data Editor (Context & Glossary)
-FlorisSrt organizes data on a **per-project basis**. 
-Once a translation is started, the **Data Editor** unlocks, allowing you to:
-- Add characters and their background descriptions to improve the AI's understanding of the narrative.
-- Manage the Global Glossary to enforce specific translations (e.g., proper nouns, magic spells).
-- View the auto-generated Term Memory.
+### 3. Data Editor Tab (Unlocks upon running)
+FlorisSrt organizes lore and terminology on a **per-project basis**. Once a translation is initialized for an anime, this tab unlocks.
+- **Context & Story**: Write a brief synopsis of the episode or anime. The LLM uses this to understand the atmosphere.
+- **Characters**: Add character names and genders. The LLM will use this to correctly attribute gendered pronouns in Arabic (e.g., using "أنتَ" for males vs "أنتِ" for females).
+- **Glossary**: Add specific proper nouns or fictional terms (like Magic Spells, City names) and force the LLM to always use your translation.
+- **Term Memory**: A read-only auto-generated dictionary where the LLM records how it translated new terms, guaranteeing that it uses the exact same translation in future episodes!
 
 ---
 
@@ -83,5 +83,29 @@ Once a translation is started, the **Data Editor** unlocks, allowing you to:
 - مفتاح API نشط (مثل DeepSeek أو OpenAI).
 
 لتشغيل البرنامج بعد تحميله وتثبيت المكتبات `pip install -r requirements.txt`، يمكنك فقط الضغط مرتين على أيقونة `FlorisSrt` (الاختصار الموجود في المجلد) وسيعمل بواجهته الأنيقة مباشرة!
+
+## 💻 دليل استخدام الواجهة (GUI)
+
+البرنامج مقسم إلى ثلاثة تبويبات رئيسية لتسهيل العمل:
+
+### 1. تبويب التشغيل (Run)
+هو غرفة التحكم الرئيسية للمترجم.
+- **ترجمة ملف واحد (File)**: اختر ملف حلقة واحدة، وسيتعرف البرنامج تلقائياً على اسم الأنمي ورقم الحلقة.
+- **ترجمة مجلد كامل (Folder)**: يمكنك تحديد مجلد الموسم بالكامل! سيقوم البرنامج بوضع كل الحلقات في طابور انتظار، ويترجمها حلقة تلو الأخرى تلقائياً. (كما يتخطى الحلقات المترجمة مسبقاً بذكاء).
+- **زر الاستئناف (Resume)**: في حال انقطاع الإنترنت أو إيقافك للبرنامج، اضغط هنا ليعود البرنامج للترجمة من نفس السطر الذي توقف عنده دون استهلاك رصيد API إضافي!
+- **سجل الأحداث (Logs)**: شاشة حية تعرض لك ما يقرؤه ويترجمه الذكاء الاصطناعي لحظة بلحظة.
+
+### 2. تبويب الإعدادات (Settings)
+مكان تجهيز المحرك والمزود.
+- **المزود (Provider)**: يدعم (DeepSeek, OpenAI, OpenRouter, Gemini).
+- **مفتاح API**: ضع مفتاحك هنا بأمان (يتم حفظه مشفراً في جهازك ولا يُرفع للإنترنت).
+- **لغة السجل (Log Language)**: يمكنك اختيار عرض سجل الأحداث باللغة العربية، أو الإنجليزية، أو كلتيهما معاً.
+
+### 3. تبويب محرر البيانات (Data Editor)
+**هذا التبويب يفتح تلقائياً بمجرد بدئك لترجمة أي أنمي!** وهو المكان السري الذي يجعل ترجمتك احترافية:
+- **سياق القصة (Context)**: يمكنك كتابة نبذة عن الأنمي ليفهم المحرك طبيعة العالم (هل هو عالم سحري؟ حروب فضاء؟ كوميديا؟).
+- **الشخصيات (Characters)**: أضف أسماء الشخصيات وجنسهم (ذكر/أنثى)، ليتمكن البرنامج من استخدام الضمائر العربية بشكل صحيح تماماً (أنتَ / أنتِ / ذهبتْ / ذهبَ).
+- **القاموس (Glossary)**: أضف المصطلحات الخيالية، أسماء المدن، والقدرات السحرية، وأجبر الذكاء الاصطناعي على ترجمتها كما تريد أنت في كل مرة.
+- **ذاكرة المصطلحات (Term Memory)**: جدول ذكي يقوم الذكاء الاصطناعي بتعبئته بنفسه! حين يترجم مصطلحاً جديداً لأول مرة سيحفظه هنا ليتذكره في الحلقات القادمة دون تدخل منك!
 
 </div>
