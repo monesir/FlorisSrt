@@ -130,6 +130,9 @@ class SettingsTab(QWidget):
         self.ext_infinite_retries = QCheckBox("Infinite Retries (Never Skip)")
         ext_lay.addRow("Behavior:", self.ext_infinite_retries)
         
+        self.ext_test_conn_btn = QPushButton("Test Extractor Connection")
+        ext_lay.addRow("", self.ext_test_conn_btn)
+        
         # --- Project Paths Settings ---
         paths_group = QGroupBox("Project Paths & Config")
         paths_lay = QFormLayout(paths_group)

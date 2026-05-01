@@ -90,6 +90,7 @@ If none are found, return empty arrays."""
                         messages=[{"role": "user", "content": user_prompt}]
                     )
                     content = response.content[0].text
+                    usage_data = {"prompt_tokens": response.usage.input_tokens, "completion_tokens": response.usage.output_tokens, "total_tokens": response.usage.input_tokens + response.usage.output_tokens} if hasattr(response, 'usage') else None
                 else:
                     response = self.client.chat.completions.create(
                         model=self.model,
@@ -101,6 +102,7 @@ If none are found, return empty arrays."""
                         timeout=self.timeout
                     )
                     content = response.choices[0].message.content
+                    usage_data = {"prompt_tokens": response.usage.prompt_tokens, "completion_tokens": response.usage.completion_tokens, "total_tokens": response.usage.total_tokens} if hasattr(response, 'usage') and response.usage else None
                     
                 import re
                 json_match = re.search(r"\{[\s\S]*\}", content)
@@ -111,7 +113,8 @@ If none are found, return empty arrays."""
                 
                 return {
                     "characters": data.get("characters") or [],
-                    "terms": data.get("terms") or []
+                    "terms": data.get("terms") or [],
+                    "usage": usage_data
                 }
             except Exception as e:
                 err_msg = str(e)
@@ -157,6 +160,10 @@ If none are found, return empty arrays."""
             
             if "error" in result:
                 if log_callback: log_callback(f"Error in chunk {idx+1}: {result['error']}")
+                
+            if "usage" in result and result["usage"] and log_callback:
+                u = result["usage"]
+                log_callback(f"Tokens: {u.get('prompt_tokens')} IN | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
             
             # Merge Results
             chars_list = result.get('characters') or []

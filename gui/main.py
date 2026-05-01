@@ -164,6 +164,7 @@ class AppController:
         self.window.settings_tab.save_btn.clicked.connect(self._save_config)
         self.window.settings_tab.reset_btn.clicked.connect(self._reset_config)
         self.window.settings_tab.test_conn_btn.clicked.connect(self._test_connection)
+        self.window.settings_tab.ext_test_conn_btn.clicked.connect(self._test_ext_connection)
         
         self.window.settings_tab.provider_cb.currentTextChanged.connect(self._on_provider_changed)
         self.window.settings_tab.ext_provider_cb.currentTextChanged.connect(self._on_ext_provider_changed)
@@ -809,13 +810,23 @@ class AppController:
         self.window.settings_tab.lbl_test_result.setStyleSheet("color: orange; font-weight: bold;")
         
         self.tester = ConnectionTester(provider, api_key)
-        self.tester.result_ready.connect(self._update_test_result)
+        self.tester.result_ready.connect(lambda msg, success: self._update_test_result(msg, success, self.window.settings_tab.lbl_test_result))
+        self.tester.start()
+        
+    def _test_ext_connection(self):
+        provider = self.window.settings_tab.ext_provider_cb.currentText()
+        api_key = self.window.settings_tab.ext_api_key.text().strip()
+        self.window.settings_tab.lbl_test_result.setText("Testing Extractor...")
+        self.window.settings_tab.lbl_test_result.setStyleSheet("color: orange; font-weight: bold;")
+        
+        self.tester = ConnectionTester(provider, api_key)
+        self.tester.result_ready.connect(lambda msg, success: self._update_test_result(msg, success, self.window.settings_tab.lbl_test_result))
         self.tester.start()
 
-    def _update_test_result(self, msg, success):
-        self.window.settings_tab.lbl_test_result.setText(msg)
+    def _update_test_result(self, msg, success, label_widget):
+        label_widget.setText(msg)
         color = "green" if success else "red"
-        self.window.settings_tab.lbl_test_result.setStyleSheet(f"color: {color}; font-weight: bold;")
+        label_widget.setStyleSheet(f"color: {color}; font-weight: bold;")
 
     def _start_translation(self):
         path = self.window.run_tab.file_input.text()
