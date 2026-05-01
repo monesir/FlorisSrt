@@ -388,8 +388,8 @@ class AppController:
         
         if not prov_data.get("name"):
             prov_data["name"] = models.get(new_provider, [""])[0]
-                    self.window.settings_tab.translation_style_cb.setCurrentText(prefs.get("translation_style", "Standard (فصحى)"))
-            self.window.settings_tab.force_single_line.setChecked(prefs.get("force_single_line", False))
+            
+        self.window.settings_tab.model_name.setCurrentText(prov_data.get("name", ""))
         self.window.settings_tab.model_name.blockSignals(False)
         
         self.window.settings_tab.api_key.blockSignals(True)
@@ -423,7 +423,11 @@ class AppController:
         st.constraint_mode.setCurrentText(exe.get("constraint_mode", "balanced"))
         st.max_retries.setValue(exe.get("max_retries", 5))
         st.timeout.setValue(exe.get("timeout", 30))
-        st.log_language_cb.setCurrentText(exe.get("log_language", "Bilingual"))
+        
+        prefs = config.get("preferences", {})
+        st.log_language_cb.setCurrentText(prefs.get("log_language", "Bilingual"))
+        st.translation_style_cb.setCurrentText(prefs.get("translation_style", "Standard (فصحى)"))
+        st.force_single_line.setChecked(prefs.get("force_single_line", False))
 
     def _save_config(self, show_msg=True):
         self._cache_provider_data()
