@@ -174,6 +174,7 @@ class AppController:
         self.batch_project_name = os.path.basename(folder)
         target_ext = self.window.run_tab.batch_format_cb.currentText()
         files = []
+        skipped_count = 0
         for root, _, filenames in os.walk(folder):
             for f in filenames:
                 if f.lower().endswith(target_ext) or (target_ext == "Both" and f.lower().endswith(('.srt', '.ass'))):
@@ -186,13 +187,29 @@ class AppController:
                     output_path = os.path.join(self.project_service.base_dir, anime, "episodes", episode, f"{base_name}_floris{ext}")
                     
                     if os.path.exists(output_path):
+                        skipped_count += 1
                         continue # Skip completed file
                         
                     files.append(file_path)
                     
         if not files:
-            QMessageBox.warning(self.window, "No Files", f"No {target_ext} files found in the selected folder.")
-            return
+            if skipped_count > 0:
+                reply = QMessageBox.question(
+                    self.window, 
+                    "All Files Translated", 
+                    f"Found {skipped_count} files, but they are already translated.\nDo you want to re-translate them (overwrite)?",
+                    QMessageBox.Yes | QMessageBox.No
+                )
+                if reply == QMessageBox.Yes:
+                    for root, _, filenames in os.walk(folder):
+                        for f in filenames:
+                            if f.lower().endswith(target_ext) or (target_ext == "Both" and f.lower().endswith(('.srt', '.ass'))):
+                                files.append(os.path.join(root, f))
+                else:
+                    return
+            else:
+                QMessageBox.warning(self.window, "No Files", f"No {target_ext} files found in the selected folder.")
+                return
             
         files.sort()
         self.batch_queue = files
