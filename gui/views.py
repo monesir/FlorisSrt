@@ -167,7 +167,7 @@ class SettingsTab(QWidget):
         paths_lay.addRow("Log Language:", self.log_language_cb)
         
         self.translation_style_cb = QComboBox()
-        self.translation_style_cb.addItems(["Standard (فصحى)", "Colloquial (عامية)"])
+        self.translation_style_cb.addItems(["Standard (فصحى)", "Colloquial - White (عامية بيضاء)", "Colloquial - Egyptian (عامية مصرية)", "Colloquial - Saudi (عامية سعودية)"])
         paths_lay.addRow("Translation Style:", self.translation_style_cb)
         
         self.max_retries = QSpinBox()

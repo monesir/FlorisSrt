@@ -135,9 +135,14 @@ def main():
     glossary_matcher = GlossaryMatcher(combined_glossary)
     translation_cache = TranslationCache(proj_info['project_path'])
     
-    # Load Agent Prompts
-    if args.translation_style == "Colloquial (عامية)":
-        agents_prompt_path = os.path.join('agents', 'AGENTS_AMMIYA.md')
+    if "عامية بيضاء" in args.translation_style:
+        agents_prompt_path = os.path.join('agents', 'AGENTS_AMMIYA_WHITE.md')
+        soul_prompt_path = os.path.join('agents', 'SOUL_AMMIYA.md')
+    elif "عامية مصرية" in args.translation_style:
+        agents_prompt_path = os.path.join('agents', 'AGENTS_AMMIYA_EGYPTIAN.md')
+        soul_prompt_path = os.path.join('agents', 'SOUL_AMMIYA.md')
+    elif "عامية سعودية" in args.translation_style:
+        agents_prompt_path = os.path.join('agents', 'AGENTS_AMMIYA_SAUDI.md')
         soul_prompt_path = os.path.join('agents', 'SOUL_AMMIYA.md')
     else:
         agents_prompt_path = os.path.join('agents', 'AGENTS.md')

@@ -1,8 +1,8 @@
 # AGENTS.md — Subtitle Translator v2 (Anime / Series)
 
-## Language Level: Modern Colloquial Arabic (عامية بيضاء / أو مصرية)
+## Language Level: Egyptian Colloquial Arabic (عامية مصرية)
 DEFINITION:
-* Modern Colloquial Arabic (عامية يومية سلسة ومفهومة)
+* Egyptian Colloquial Arabic (عامية مصرية يومية سلسة)
 * Natural, conversational, and smooth for dialogue.
 * NOT rigid Standard Arabic (ليست فصحى معقدة أو متصلبة).
 * Do NOT force excessive or obscure slang. Focus on natural spoken flow.
