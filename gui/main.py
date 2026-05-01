@@ -108,7 +108,8 @@ class ExtractorWorker(QThread):
                 def log_cb(msg):
                     self.log_updated.emit(msg)
                     
-                res = engine.process_file(fp, self.source_lang, self.work_context, prog_cb, log_cb)
+                chunk_size = ext_cfg.get("chunk_size", 75)
+                res = engine.process_file(fp, self.source_lang, self.work_context, prog_cb, log_cb, chunk_size=chunk_size)
                 
                 merged_result["characters"].extend(res.get("characters", []))
                 merged_result["terms"].extend(res.get("terms", []))
@@ -741,6 +742,7 @@ class AppController:
         st.ext_model_name.setCurrentText(ext_agent.get("model", ""))
         st.ext_api_key.setText(ext_agent.get("api_key", ""))
         st.ext_infinite_retries.setChecked(ext_agent.get("infinite_retries", False))
+        st.ext_chunk_size.setValue(ext_agent.get("chunk_size", 75))
         
         paths = config.get("paths", {})
         st.path_glossary.setText(paths.get("glossary", ""))
@@ -778,7 +780,8 @@ class AppController:
             "provider": st.ext_provider_cb.currentText(),
             "model": st.ext_model_name.currentText().strip(),
             "api_key": st.ext_api_key.text().strip(),
-            "infinite_retries": st.ext_infinite_retries.isChecked()
+            "infinite_retries": st.ext_infinite_retries.isChecked(),
+            "chunk_size": st.ext_chunk_size.value()
         }
         
         self.config_cache["output"] = {"folder": st.path_output.text()}

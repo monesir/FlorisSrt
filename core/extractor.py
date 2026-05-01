@@ -124,9 +124,9 @@ If none are found, return empty arrays."""
                 
         return {"characters": [], "terms": []}
 
-    def process_file(self, filepath, source_lang, work_context="", progress_callback=None, log_callback=None):
+    def process_file(self, filepath, source_lang, work_context="", progress_callback=None, log_callback=None, chunk_size=75):
         """
-        يقرأ الملف، يقسمه لكتل (75 سطر)، ويستخرج منها البيانات.
+        يقرأ الملف، يقسمه لكتل، ويستخرج منها البيانات.
         """
         from parsers.subtitle_parser import SubtitleParser
         parser = SubtitleParser()
@@ -137,7 +137,6 @@ If none are found, return empty arrays."""
             if log_callback: log_callback(f"Failed to parse {filepath}: {e}")
             return {"characters": [], "terms": []}
             
-        chunk_size = 75 # Reduced to 75 to avoid token limits and truncated JSON
         chunks = [segments[i:i + chunk_size] for i in range(0, len(segments), chunk_size)]
         
         if log_callback: log_callback(f"Split file into {len(chunks)} chunks.")

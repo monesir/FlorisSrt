@@ -130,6 +130,11 @@ class SettingsTab(QWidget):
         self.ext_infinite_retries = QCheckBox("Infinite Retries (Never Skip)")
         ext_lay.addRow("Behavior:", self.ext_infinite_retries)
         
+        self.ext_chunk_size = QSpinBox()
+        self.ext_chunk_size.setRange(10, 500)
+        self.ext_chunk_size.setValue(75)
+        ext_lay.addRow("Chunk Size (Lines):", self.ext_chunk_size)
+        
         self.ext_test_conn_btn = QPushButton("Test Extractor Connection")
         ext_lay.addRow("", self.ext_test_conn_btn)
         
