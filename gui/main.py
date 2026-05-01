@@ -918,7 +918,8 @@ class AppController:
         dir_path = QFileDialog.getExistingDirectory(self.window, "Select Folder Containing Subtitles")
         if dir_path:
             import glob
-            files = glob.glob(os.path.join(dir_path, "*.ass")) + glob.glob(os.path.join(dir_path, "*.srt"))
+            files = glob.glob(os.path.join(dir_path, "**", "*.ass"), recursive=True) + \
+                    glob.glob(os.path.join(dir_path, "**", "*.srt"), recursive=True)
             if files:
                 self.window.analyze_tab.files_input.setText(";".join(files))
             else:
@@ -994,57 +995,42 @@ class AppController:
             QMessageBox.warning(self.window, "Warning", "Please specify a Target Project (Anime Name).")
             return
             
-        from core.project_resolution import ProjectResolution
-        pr = ProjectResolution(self.config_cache.get("output_dir", "projects"))
-        res = pr.resolve(project, "tmp") # just to create the project directory structure
-        data_path = res["data_path"]
+        self.project_service.bootstrap_project(project, "")
+        
+        # Load existing data
+        char_data = self.project_service.load_project_data(project, "characters.json")
+        glos_data = self.project_service.load_project_data(project, "glossary.json")
+        
+        existing_chars = char_data.get("characters", [])
+        existing_terms = glos_data.get("terms", [])
+        
+        existing_char_names = {c.get("name", "").lower() for c in existing_chars}
+        existing_term_names = {t.get("term", "").lower() for t in existing_terms}
         
         # Collect Characters
-        new_chars = {}
         ctable = self.window.analyze_tab.char_table
         for r in range(ctable.rowCount()):
             if ctable.item(r, 0).checkState() == Qt.Checked:
                 name = ctable.item(r, 1).text().strip()
                 desc = ctable.item(r, 2).text().strip()
-                if name:
-                    new_chars[name] = {"role": desc, "gender": "unknown"}
+                if name and name.lower() not in existing_char_names:
+                    existing_chars.append({"name": name, "arabic_name": "", "gender": "unknown", "description": desc})
+                    existing_char_names.add(name.lower())
                     
         # Collect Terms
-        new_terms = {}
         gtable = self.window.analyze_tab.glos_table
         for r in range(gtable.rowCount()):
             if gtable.item(r, 0).checkState() == Qt.Checked:
                 term = gtable.item(r, 1).text().strip()
                 trans = gtable.item(r, 2).text().strip()
                 typ = gtable.item(r, 3).text().strip()
-                if term:
-                    new_terms[term] = {"variants": [term], "translation": trans, "type": typ}
+                if term and term.lower() not in existing_term_names:
+                    existing_terms.append({"term": term, "translation": trans, "type": typ})
+                    existing_term_names.add(term.lower())
                     
-        import json
-        char_file = os.path.join(data_path, 'characters.json')
-        glos_file = os.path.join(data_path, 'glossary.json')
-        
-        # Merge with existing
-        if os.path.exists(char_file):
-            try:
-                with open(char_file, 'r', encoding='utf-8') as f:
-                    existing_chars = json.load(f)
-                    existing_chars.update(new_chars)
-                    new_chars = existing_chars
-            except: pass
-        if os.path.exists(glos_file):
-            try:
-                with open(glos_file, 'r', encoding='utf-8') as f:
-                    existing_terms = json.load(f)
-                    existing_terms.update(new_terms)
-                    new_terms = existing_terms
-            except: pass
-            
-        with open(char_file, 'w', encoding='utf-8') as f:
-            json.dump(new_chars, f, ensure_ascii=False, indent=2)
-            
-        with open(glos_file, 'w', encoding='utf-8') as f:
-            json.dump(new_terms, f, ensure_ascii=False, indent=2)
+        # Save back
+        self.project_service.save_project_data(project, "characters.json", {"characters": existing_chars})
+        self.project_service.save_project_data(project, "glossary.json", {"terms": existing_terms})
             
         QMessageBox.information(self.window, "Saved", f"Data saved to project '{project}' successfully!")
         self._refresh_data_editor() # Refresh UI
