@@ -180,7 +180,7 @@ class AppController:
         if not project_str: return
         
         anime, episode = project_str.split(" / ")
-        ep_dir = os.path.join(self.project_service.base_dir, anime, episode)
+        ep_dir = os.path.join(self.project_service.base_dir, anime, 'episodes', episode)
         
         self.current_review_state_manager = StateManager(ep_dir)
         state = self.current_review_state_manager.load_or_create_state(0)
