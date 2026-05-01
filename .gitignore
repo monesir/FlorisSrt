@@ -1,0 +1,28 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+venv/
+env/
+ENV/
+
+# Configuration (contains API keys)
+config.json
+
+# Project Data
+project.json
+term_memory.json
+chunks/
+output.ass
+output.srt
+*_floris.ass
+*_floris.srt
+*.tmp
+
+# VS Code
+.vscode/
+
+# Ignore local tests
+tests/local_*/
