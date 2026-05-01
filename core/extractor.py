@@ -41,8 +41,8 @@ Your task is to extract important narrative elements to build a localization glo
 
 {context_block}
 Extract the following:
-1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name, suggest an accurate Arabic translation/transliteration for their name, and a brief description of their role/context.
-2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation (or keep it as is if it's a proper noun) and classify its type (location/ability/organization/etc).
+1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their deduced English/Romaji name as "name", the Arabic name exactly as written in the text as "arabic_name", and a brief description of their role.
+2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Provide the deduced English/Romaji term as "term", the exact Arabic translation used in the text as "translation_suggestion", and classify its type (location/ability/organization/etc).
 
 You MUST respond strictly in valid JSON format with the following schema:
 {{
