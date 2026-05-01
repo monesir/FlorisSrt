@@ -1,0 +1,78 @@
+{
+  "en": {
+    "characters": [
+      {
+        "name": "Goku",
+        "description": "Protagonist, Saiyan warrior."
+      },
+      {
+        "name": "Vegeta",
+        "description": "Saiyan prince, rival to Goku."
+      },
+      {
+        "name": "Bulma",
+        "description": "Human scientist, co-founder of Capsule Corp."
+      }
+    ],
+    "terms": [
+      {
+        "term": "Kamehameha",
+        "translation_suggestion": "كامي هامي ها",
+        "type": "ability"
+      },
+      {
+        "term": "Over 9000",
+        "translation_suggestion": "أكثر من 9000",
+        "type": "power level statement"
+      },
+      {
+        "term": "Dragon Balls",
+        "translation_suggestion": "كرات التنين",
+        "type": "object"
+      },
+      {
+        "term": "Capsule Corp",
+        "translation_suggestion": "شركة كبسولة",
+        "type": "organization"
+      }
+    ]
+  },
+  "ar": {
+    "characters": [
+      {
+        "name": "Goku",
+        "description": "Protagonist, Saiyan warrior."
+      },
+      {
+        "name": "Vegeta",
+        "description": "Saiyan prince."
+      },
+      {
+        "name": "Bulma",
+        "description": "Human inventor and financier."
+      }
+    ],
+    "terms": [
+      {
+        "term": "Kamehameha",
+        "translation_suggestion": "Kamehameha",
+        "type": "Ability"
+      },
+      {
+        "term": "It's over 9000",
+        "translation_suggestion": "إنها أكثر من 9000",
+        "type": "Quote/Power Level"
+      },
+      {
+        "term": "Dragon Balls",
+        "translation_suggestion": "كرات التنين",
+        "type": "Object"
+      },
+      {
+        "term": "Capsule Corp",
+        "translation_suggestion": "Capsule Corp",
+        "type": "Organization"
+      }
+    ]
+  }
+}

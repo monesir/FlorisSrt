@@ -1,4 +1,4 @@
-# AGENTS.md — Subtitle Translator v2 (Anime / Series)
+# AGENTS.md — Subtitle Translator v2 (Project / Series)
 
 ## Language Level: Modern Colloquial Arabic (عامية بيضاء)
 DEFINITION:

@@ -1,10 +1,10 @@
 <div align="center">
   <img src="assets/icon.png" width="150" alt="FlorisSrt Logo">
   <h1>FlorisSrt</h1>
-  <p><b>Advanced Agentic AI Subtitle Localization Pipeline for Anime</b></p>
+  <p><b>Advanced Agentic AI Subtitle Localization Pipeline for Project</b></p>
 </div>
 
-FlorisSrt is a highly specialized, context-aware translation pipeline designed for localizing Anime subtitles (ASS/SRT) using advanced Large Language Models (LLMs). It utilizes a robust architecture capable of maintaining character consistency, managing glossaries, and overcoming token limits without sacrificing translation quality.
+FlorisSrt is a highly specialized, context-aware translation pipeline designed for localizing Project subtitles (ASS/SRT) using advanced Large Language Models (LLMs). It utilizes a robust architecture capable of maintaining character consistency, managing glossaries, and overcoming token limits without sacrificing translation quality.
 
 ---
 
@@ -46,7 +46,7 @@ The application is divided into three main tabs:
 
 ### 1. Run Tab (Main Dashboard)
 This is where the magic happens.
-- **File Mode**: Select a single `.ass` or `.srt` file. The system will automatically resolve the anime name and episode number.
+- **File Mode**: Select a single `.ass` or `.srt` file. The system will automatically resolve the project name and episode number.
 - **Folder Mode (Batch)**: Select an entire directory. The system will line up all subtitle files into a batch queue and translate them one by one. It intelligently skips files that have already been translated.
 - **Resume Button**: If the translation was interrupted or stopped, clicking `Resume` will pick up exactly where it left off, avoiding duplicate token costs.
 - **Live Logs**: Watch the dual-agent translation process in real-time, including context tracking and token usage.
@@ -65,8 +65,8 @@ Configure your translation engine and parameters.
 - **Max Retries & Timeout**: Configure the AI's fallback limits. If a response is mangled, the Validator will retry up to *Max Retries*. If the API is overloaded, it will wait up to *Timeout* seconds before triggering the Circuit Breaker.
 
 ### 3. Data Editor Tab (Unlocks upon running)
-FlorisSrt organizes lore and terminology on a **per-project basis**. Once a translation is initialized for an anime, this tab unlocks.
-- **Context & Story**: Write a brief synopsis of the episode or anime. The LLM uses this to understand the atmosphere.
+FlorisSrt organizes lore and terminology on a **per-project basis**. Once a translation is initialized for an project, this tab unlocks.
+- **Context & Story**: Write a brief synopsis of the episode or project. The LLM uses this to understand the atmosphere.
 - **Characters**: Add character names and genders. The LLM will use this to correctly attribute gendered pronouns in Arabic (e.g., using "أنتَ" for males vs "أنتِ" for females).
 - **Glossary**: Add specific proper nouns or fictional terms (like Magic Spells, City names) and force the LLM to always use your translation.
 - **Term Memory**: A read-only auto-generated dictionary where the LLM records how it translated new terms, guaranteeing that it uses the exact same translation in future episodes!

@@ -130,7 +130,7 @@ class AppController:
         self.config_service = ConfigService()
         self.runner = RunnerService()
         
-        self.current_anime = None
+        self.current_project = None
         self.current_episode = None
         
         self.config_cache = self.config_service.load()
@@ -165,7 +165,7 @@ class AppController:
         self.batch_queue = []
         self.total_batch = 0
         
-        self.current_anime = None
+        self.current_project = None
         self.window.settings_tab.save_btn.clicked.connect(self._save_config)
         self.window.settings_tab.reset_btn.clicked.connect(self._reset_config)
         self.window.settings_tab.test_conn_btn.clicked.connect(self._test_connection)
@@ -200,7 +200,7 @@ class AppController:
         self.window.data_editor_tab.term_save.clicked.connect(self._save_term_memory)
         
         self.window.review_tab.refresh_btn.clicked.connect(self._refresh_review_projects)
-        self.window.review_tab.anime_cb.currentTextChanged.connect(self._on_review_anime_changed)
+        self.window.review_tab.project_cb.currentTextChanged.connect(self._on_review_anime_changed)
         self.window.review_tab.episode_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.filter_cb.currentTextChanged.connect(self._load_review_data)
         self.window.review_tab.rebuild_btn.clicked.connect(self._save_and_rebuild_subtitles)
@@ -258,7 +258,7 @@ class AppController:
     def _refresh_editor_projects(self):
         projects_tree = self.project_service.get_projects_tree()
         cb = self.window.data_editor_tab.project_cb
-        current = self.current_anime or cb.currentText()
+        current = self.current_project or cb.currentText()
         cb.blockSignals(True)
         cb.clear()
         cb.addItem("")
@@ -270,7 +270,7 @@ class AppController:
         
     def _on_data_editor_project_changed(self, new_project):
         new_project = new_project.strip()
-        self.current_anime = new_project if new_project else None
+        self.current_project = new_project if new_project else None
         
         if new_project and not self.project_service.project_exists(new_project):
             self.project_service.bootstrap_project(new_project, "")
@@ -281,7 +281,7 @@ class AppController:
     def _refresh_review_projects(self):
         self.projects_tree = self.project_service.get_projects_tree()
         
-        cb = self.window.review_tab.anime_cb
+        cb = self.window.review_tab.project_cb
         cb.blockSignals(True)
         cb.clear()
         cb.addItems(list(self.projects_tree.keys()))
@@ -290,9 +290,9 @@ class AppController:
         if self.projects_tree:
             self._on_review_anime_changed(cb.currentText())
             
-    def _on_review_anime_changed(self, anime_name):
+    def _on_review_anime_changed(self, project_name):
         if not hasattr(self, 'projects_tree'): return
-        episodes = self.projects_tree.get(anime_name, [])
+        episodes = self.projects_tree.get(project_name, [])
         
         cb = self.window.review_tab.episode_cb
         cb.blockSignals(True)
@@ -304,10 +304,10 @@ class AppController:
             self._load_review_data()
 
     def _load_review_data(self):
-        anime = self.window.review_tab.anime_cb.currentText()
+        project = self.window.review_tab.project_cb.currentText()
         episode = self.window.review_tab.episode_cb.currentText()
-        if not anime or not episode: return
-        ep_dir = os.path.join(self.project_service.base_dir, anime, 'episodes', episode)
+        if not project or not episode: return
+        ep_dir = os.path.join(self.project_service.base_dir, project, 'episodes', episode)
         
         self.current_review_state_manager = StateManager(ep_dir)
         state = self.current_review_state_manager.load_or_create_state(0)
@@ -479,10 +479,10 @@ class AppController:
                     file_path = os.path.join(root, f)
                     
                     # Check if already translated
-                    anime, episode = self.project_service.resolve_project(file_path, force_anime_name=self.batch_project_name)
+                    project, episode = self.project_service.resolve_project(file_path, force_project_name=self.batch_project_name)
                     base_name = os.path.splitext(f)[0]
                     ext = os.path.splitext(f)[1]
-                    output_path = os.path.join(self.project_service.base_dir, anime, "episodes", episode, f"{base_name}_floris{ext}")
+                    output_path = os.path.join(self.project_service.base_dir, project, "episodes", episode, f"{base_name}_floris{ext}")
                     
                     if os.path.exists(output_path):
                         skipped_count += 1
@@ -519,56 +519,56 @@ class AppController:
 
     def _on_file_selected(self, path):
         if not path or not os.path.exists(path): return
-        anime, episode = self.project_service.resolve_project(path, force_anime_name=getattr(self, 'batch_project_name', None))
+        project, episode = self.project_service.resolve_project(path, force_project_name=getattr(self, 'batch_project_name', None))
         
-        if not self.project_service.project_exists(anime):
-            self.project_service.bootstrap_project(anime, path)
+        if not self.project_service.project_exists(project):
+            self.project_service.bootstrap_project(project, path)
             msg = QMessageBox(self.window)
             msg.setWindowTitle("Project Created")
-            msg.setText(f"Project '{anime}' created successfully.\nBasic data initialized.")
+            msg.setText(f"Project '{project}' created successfully.\nBasic data initialized.")
             btn_open = msg.addButton("Open Data Editor", QMessageBox.AcceptRole)
             msg.addButton("Continue", QMessageBox.RejectRole)
             msg.exec()
             if msg.clickedButton() == btn_open:
                 self.window.tabs.setCurrentIndex(2)
 
-        self.current_anime = anime
+        self.current_project = project
         self.current_episode = episode
         
-        self.window.run_tab.lbl_anime.setText(f"Anime: {anime}")
+        self.window.run_tab.lbl_project.setText(f"Project: {project}")
         self.window.run_tab.lbl_episode.setText(f"Episode: {episode}")
-        self.window.lbl_status_right.setText(f"Project: {anime}")
+        self.window.lbl_status_right.setText(f"Project: {project}")
         
         self.window.run_tab.start_btn.setEnabled(True)
         self.window.run_tab.open_out_btn.setEnabled(True)
-        state_path = os.path.join(self.project_service.base_dir, anime, "episodes", episode, "project.json")
+        state_path = os.path.join(self.project_service.base_dir, project, "episodes", episode, "project.json")
         self.window.run_tab.resume_btn.setEnabled(os.path.exists(state_path))
         
         self.window.data_editor_tab.setEnabled(True)
         cb = self.window.data_editor_tab.project_cb
         cb.blockSignals(True)
-        if cb.findText(anime) == -1:
-            cb.addItem(anime)
-        cb.setCurrentText(anime)
+        if cb.findText(project) == -1:
+            cb.addItem(project)
+        cb.setCurrentText(project)
         cb.blockSignals(False)
         
         self._load_project_data_to_editor()
 
     def _load_project_data_to_editor(self):
-        if not self.current_anime:
+        if not self.current_project:
             self.window.data_editor_tab.char_table.setRowCount(0)
             self.window.data_editor_tab.glos_table.setRowCount(0)
             self.window.data_editor_tab.context_text.clear()
             self.window.data_editor_tab.term_table.setRowCount(0)
             return
         
-        char_data = self.project_service.load_project_data(self.current_anime, "characters.json")
+        char_data = self.project_service.load_project_data(self.current_project, "characters.json")
         chars = char_data.get("characters", [])
         self.window.data_editor_tab.char_table.setRowCount(0)
         for c in chars:
             self._add_character_row(c.get("name", ""), c.get("arabic_name", ""), c.get("gender", "unknown"))
             
-        glos_data = self.project_service.load_project_data(self.current_anime, "glossary.json")
+        glos_data = self.project_service.load_project_data(self.current_project, "glossary.json")
         terms = glos_data.get("terms", [])
         self.window.data_editor_tab.glos_table.setRowCount(0)
         for t in terms:
@@ -579,10 +579,10 @@ class AppController:
                 typ = t.get("match_type", "hard")
             self._add_glossary_row(t.get("term", ""), t.get("translation", ""), cat, typ)
             
-        ctx_data = self.project_service.load_project_data(self.current_anime, "work_context.json")
+        ctx_data = self.project_service.load_project_data(self.current_project, "work_context.json")
         self.window.data_editor_tab.context_text.setText(ctx_data.get("description", ""))
         
-        term_data = self.project_service.load_project_data(self.current_anime, "term_memory.json")
+        term_data = self.project_service.load_project_data(self.current_project, "term_memory.json")
         self.window.data_editor_tab.term_table.setRowCount(0)
         for term, data in term_data.items():
             self._add_term_memory_row(term, data.get("translation", ""), data.get("count", 0), data.get("locked", False))
@@ -642,7 +642,7 @@ class AppController:
             table.removeRow(row)
 
     def _save_characters(self):
-        if not self.current_anime:
+        if not self.current_project:
             QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
             return
         table = self.window.data_editor_tab.char_table
@@ -657,11 +657,11 @@ class AppController:
                 if arabic_name:
                     char_obj["arabic_name"] = arabic_name
                 chars.append(char_obj)
-        self.project_service.save_project_data(self.current_anime, "characters.json", {"characters": chars})
+        self.project_service.save_project_data(self.current_project, "characters.json", {"characters": chars})
         QMessageBox.information(self.window, "Saved", "Characters saved.")
 
     def _save_glossary(self):
-        if not self.current_anime:
+        if not self.current_project:
             QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
             return
         table = self.window.data_editor_tab.glos_table
@@ -674,19 +674,19 @@ class AppController:
             m_type = table.cellWidget(i, 3).currentText()
             if term:
                 terms.append({"term": term, "translation": trans, "category": category, "type": m_type})
-        self.project_service.save_project_data(self.current_anime, "glossary.json", {"terms": terms})
+        self.project_service.save_project_data(self.current_project, "glossary.json", {"terms": terms})
         QMessageBox.information(self.window, "Saved", "Glossary saved.")
 
     def _save_work_context(self):
-        if not self.current_anime:
+        if not self.current_project:
             QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
             return
         desc = self.window.data_editor_tab.context_text.toPlainText()
-        self.project_service.save_project_data(self.current_anime, "work_context.json", {"description": desc})
+        self.project_service.save_project_data(self.current_project, "work_context.json", {"description": desc})
         QMessageBox.information(self.window, "Saved", "Work context saved.")
 
     def _save_term_memory(self):
-        if not self.current_anime:
+        if not self.current_project:
             QMessageBox.warning(self.window, "Warning", "Please select or create a Target Project first.")
             return
         table = self.window.data_editor_tab.term_table
@@ -699,7 +699,7 @@ class AppController:
             locked = chk.isChecked() if chk else False
             if term:
                 data[term] = {"translation": trans, "count": count, "locked": locked}
-        self.project_service.save_project_data(self.current_anime, "term_memory.json", data)
+        self.project_service.save_project_data(self.current_project, "term_memory.json", data)
         QMessageBox.information(self.window, "Saved", "Term Memory saved.")
 
     def _on_provider_changed(self, new_provider):
@@ -1051,8 +1051,8 @@ class AppController:
         self.window.run_tab.stop_btn.setEnabled(running)
 
     def _open_output_folder(self):
-        if not self.current_anime or not self.current_episode: return
-        ep_path = os.path.join(self.project_service.base_dir, self.current_anime, "episodes", self.current_episode)
+        if not self.current_project or not self.current_episode: return
+        ep_path = os.path.join(self.project_service.base_dir, self.current_project, "episodes", self.current_episode)
         if os.path.exists(ep_path):
             os.startfile(ep_path)
 
@@ -1060,8 +1060,8 @@ class AppController:
         if not force and self.runner.process.state() != QProcess.ProcessState.Running:
             return
             
-        if self.current_anime and self.current_episode:
-            log_path = os.path.join(self.project_service.base_dir, self.current_anime, "episodes", self.current_episode, "project.json")
+        if self.current_project and self.current_episode:
+            log_path = os.path.join(self.project_service.base_dir, self.current_project, "episodes", self.current_episode, "project.json")
             if os.path.exists(log_path):
                 try:
                     with open(log_path, 'r', encoding='utf-8') as f:
@@ -1170,7 +1170,7 @@ class AppController:
     def _on_analyze_save(self):
         project = self.window.analyze_tab.project_cb.currentText().strip()
         if not project:
-            QMessageBox.warning(self.window, "Warning", "Please specify a Target Project (Anime Name).")
+            QMessageBox.warning(self.window, "Warning", "Please specify a Target Project (Project Name).")
             return
             
         self.project_service.bootstrap_project(project, "")

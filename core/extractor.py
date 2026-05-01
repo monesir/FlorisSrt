@@ -68,7 +68,7 @@ class ExtractorEngine:
         instructions_text = "\n".join(extract_instructions)
         schema_text = json.dumps(schema_dict, indent=2)
 
-        system_prompt = f"""You are an expert anime localizer analyzing {source_lang} subtitle text.
+        system_prompt = f"""You are an expert project localizer analyzing {source_lang} subtitle text.
 Your task is to extract important narrative elements to build a localization glossary.
 
 {context_block}

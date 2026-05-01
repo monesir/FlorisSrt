@@ -35,7 +35,7 @@ def t_print(en_msg, ar_msg=None, with_time=True):
         print(f"{time_str}{en_msg} | {ar_msg}")
 
 def main():
-    parser = argparse.ArgumentParser(description="Anime Translator Pipeline (Project-Aware)")
+    parser = argparse.ArgumentParser(description="FlorisSrt Pipeline (Project-Aware)")
     parser.add_argument("--input", help="مسار الملف الخام (SRT/ASS)")
     parser.add_argument("--resume", action="store_true", help="استئناف الترجمة من آخر نقطة حفظ")
     parser.add_argument("--provider", default="openai", help="مزود הـ API (openai أو deepseek)")
@@ -85,8 +85,8 @@ def main():
 
     # 1. Project Resolution
     t_print(f"Analyzing project path for file: {args.input}...", f"جاري تحليل مسار المشروع لملف: {args.input}...", False)
-    proj_info = resolver.resolve_project(args.input, force_anime_name=args.project_name)
-    t_print(f"✅ Anime: {proj_info['anime']} | Episode: {proj_info['episode']}", f"✅ الأنمي: {proj_info['anime']} | الحلقة: {proj_info['episode']}", False)
+    proj_info = resolver.resolve_project(args.input, force_project_name=args.project_name)
+    t_print(f"✅ Project: {proj_info['project']} | Episode: {proj_info['episode']}", f"✅ الأنمي: {proj_info['project']} | الحلقة: {proj_info['episode']}", False)
     
     # 2. State Management
     state_manager = StateManager(proj_info['episode_path'])

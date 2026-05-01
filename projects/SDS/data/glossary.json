@@ -1,0 +1,238 @@
+{
+  "terms": [
+    {
+      "term": "Fifth Epoch",
+      "translation": "العصر الخامس",
+      "category": "Time Period",
+      "type": "hard"
+    },
+    {
+      "term": "Iron Age",
+      "translation": "العصر الحديدي",
+      "category": "Time Period",
+      "type": "hard"
+    },
+    {
+      "term": "Tingen City",
+      "translation": "مدينة تينغين",
+      "category": "Location",
+      "type": "hard"
+    },
+    {
+      "term": "Doomsday",
+      "translation": "يوم القيامة",
+      "category": "Concept",
+      "type": "hard"
+    },
+    {
+      "term": "Tingen Technical School",
+      "translation": "مدرسة تينغين التقنية",
+      "category": "Organization",
+      "type": "hard"
+    },
+    {
+      "term": "Iron Cross Street",
+      "translation": "شارع الصليب الحديدي",
+      "category": "Location",
+      "type": "hard"
+    },
+    {
+      "term": "Loen Kingdom",
+      "translation": "مملكة لوني",
+      "category": "Location",
+      "type": "hard"
+    },
+    {
+      "term": "Roselle Poetry Collection",
+      "translation": "مجموعة روزيل الشعرية",
+      "category": "Object",
+      "type": "hard"
+    },
+    {
+      "term": "Regence",
+      "translation": "ريجينس",
+      "category": "Time Period/Era",
+      "type": "hard"
+    },
+    {
+      "term": "The Seven Orthodox Gods of the North Continent",
+      "translation": "الآلهة السبعة الأرثوذكسية للقارة الشمالية",
+      "category": "Religion/Deities",
+      "type": "hard"
+    },
+    {
+      "term": "The Eternal Blazing Sun",
+      "translation": "الشمس الأبدية المشتعلة",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The Lord of Storms",
+      "translation": "سيد العواصف",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The God of Wisdom and Knowledge",
+      "translation": "إله الحكمة والمعرفة",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The Evernight Goddess",
+      "translation": "إلهة الليل الأبدي",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The Earth Mother",
+      "translation": "الأم الأرض",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The God of Combat",
+      "translation": "إله القتال",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The God of Steam and Machinery",
+      "translation": "إله البخار والآلات",
+      "category": "Deity",
+      "type": "hard"
+    },
+    {
+      "term": "The Celestial Worthy of Heaven and Earth",
+      "translation": "المستحق السماوي للسماء والأرض",
+      "category": "Deity/Title",
+      "type": "hard"
+    },
+    {
+      "term": "Awwa County Police",
+      "translation": "شرطة مقاطعة أوا",
+      "category": "Organization",
+      "type": "hard"
+    },
+    {
+      "term": "Tarot Club",
+      "translation": "نادي التاروت",
+      "category": "Organization",
+      "type": "hard"
+    },
+    {
+      "term": "The Hanged Man",
+      "translation": "الرجل المشنوق",
+      "category": "Ability/Title",
+      "type": "hard"
+    },
+    {
+      "term": "Beyonders",
+      "translation": "أصحاب الخوارق",
+      "category": "Supernatural Being/Group",
+      "type": "hard"
+    },
+    {
+      "term": "potions",
+      "translation": "جرعات",
+      "category": "Item",
+      "type": "hard"
+    },
+    {
+      "term": "pathways",
+      "translation": "مسارات",
+      "category": "Concept/System",
+      "type": "hard"
+    },
+    {
+      "term": "Sequence 9",
+      "translation": "التسلسل 9",
+      "category": "Rank/Level",
+      "type": "hard"
+    },
+    {
+      "term": "Sequence 0",
+      "translation": "التسلسل 0",
+      "category": "Rank/Level",
+      "type": "hard"
+    },
+    {
+      "term": "The Creator",
+      "translation": "الخالق",
+      "category": "Entity",
+      "type": "hard"
+    },
+    {
+      "term": "black divination",
+      "translation": "تنبؤ أسود",
+      "category": "Occult Practice",
+      "type": "hard"
+    },
+    {
+      "term": "sacrifice of a Beyonder",
+      "translation": "تضحية بصاحب خارق",
+      "category": "Occult Practice",
+      "type": "hard"
+    },
+    {
+      "term": "evil force",
+      "translation": "قوة شريرة",
+      "category": "Supernatural Force",
+      "type": "hard"
+    },
+    {
+      "term": "Nighthawk",
+      "translation": "النايت هوك (الصقر الليلي)",
+      "category": "Organization",
+      "type": "hard"
+    },
+    {
+      "term": "path of supreme ascension",
+      "translation": "مسار الارتقاء الأسمى",
+      "category": "Concept",
+      "type": "hard"
+    },
+    {
+      "term": "occult powers",
+      "translation": "قوى خفية/غامضة",
+      "category": "Ability",
+      "type": "hard"
+    },
+    {
+      "term": "Sequence",
+      "translation": "تسلسل",
+      "category": "Rank/System",
+      "type": "hard"
+    },
+    {
+      "term": "Path of the Divine",
+      "translation": "مسار الإلهي",
+      "category": "Concept",
+      "type": "hard"
+    },
+    {
+      "term": "Antigonus Family",
+      "translation": "عائلة أنتيجونوس",
+      "category": "Organization/Group",
+      "type": "hard"
+    },
+    {
+      "term": "Hound Pub",
+      "translation": "حانة الكلب",
+      "category": "Location",
+      "type": "hard"
+    },
+    {
+      "term": "Constant City",
+      "translation": "مدينة كونستانت",
+      "category": "Location",
+      "type": "hard"
+    },
+    {
+      "term": "mysticism",
+      "translation": "غموض/سحر",
+      "category": "Concept",
+      "type": "hard"
+    }
+  ]
+}

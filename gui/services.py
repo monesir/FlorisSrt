@@ -13,22 +13,22 @@ class ProjectService:
         self.base_dir = base_dir or os.path.join(PROJECT_ROOT, "projects")
         self.resolver = ProjectResolution(self.base_dir)
 
-    def resolve_project(self, input_path: str, force_anime_name=None) -> tuple[str, str]:
-        info = self.resolver.resolve_project(input_path, force_anime_name=force_anime_name)
-        return info["anime"], info["episode"]
+    def resolve_project(self, input_path: str, force_project_name=None) -> tuple[str, str]:
+        info = self.resolver.resolve_project(input_path, force_project_name=force_project_name)
+        return info["project"], info["episode"]
 
-    def project_exists(self, anime: str) -> bool:
-        return os.path.exists(os.path.join(self.base_dir, anime, "data"))
+    def project_exists(self, project: str) -> bool:
+        return os.path.exists(os.path.join(self.base_dir, project, "data"))
 
     def get_projects_tree(self) -> dict:
         if not os.path.exists(self.base_dir):
             return {}
         
         tree = {}
-        for anime in os.listdir(self.base_dir):
-            anime_path = os.path.join(self.base_dir, anime)
-            if os.path.isdir(anime_path):
-                episodes_dir = os.path.join(anime_path, 'episodes')
+        for project in os.listdir(self.base_dir):
+            project_path = os.path.join(self.base_dir, project)
+            if os.path.isdir(project_path):
+                episodes_dir = os.path.join(project_path, 'episodes')
                 if os.path.exists(episodes_dir):
                     episodes = []
                     for episode in os.listdir(episodes_dir):
@@ -38,11 +38,11 @@ class ProjectService:
                             if os.path.exists(state_file):
                                 episodes.append(episode)
                     if episodes:
-                        tree[anime] = sorted(episodes)
+                        tree[project] = sorted(episodes)
         return dict(sorted(tree.items()))
 
-    def bootstrap_project(self, anime: str, input_path: str) -> None:
-        data_dir = os.path.join(self.base_dir, anime, "data")
+    def bootstrap_project(self, project: str, input_path: str) -> None:
+        data_dir = os.path.join(self.base_dir, project, "data")
         os.makedirs(data_dir, exist_ok=True)
         
         defaults = {
@@ -57,8 +57,8 @@ class ProjectService:
             if not os.path.exists(path):
                 self._atomic_write(path, content)
 
-    def load_project_data(self, anime: str, file_name: str) -> dict:
-        path = os.path.join(self.base_dir, anime, "data", file_name)
+    def load_project_data(self, project: str, file_name: str) -> dict:
+        path = os.path.join(self.base_dir, project, "data", file_name)
         if os.path.exists(path):
             try:
                 with open(path, 'r', encoding='utf-8') as f:
@@ -67,8 +67,8 @@ class ProjectService:
                 pass
         return {}
 
-    def save_project_data(self, anime: str, file_name: str, data: dict):
-        dir_path = os.path.join(self.base_dir, anime, "data")
+    def save_project_data(self, project: str, file_name: str, data: dict):
+        dir_path = os.path.join(self.base_dir, project, "data")
         os.makedirs(dir_path, exist_ok=True)
         path = os.path.join(dir_path, file_name)
         self._atomic_write(path, data)

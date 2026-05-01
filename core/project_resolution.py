@@ -4,7 +4,7 @@ import json
 
 class ProjectResolution:
     """
-    الطبقة المسؤولة عن تحليل اسم الملف وربطه بالمشروع المناسب (Anime)
+    الطبقة المسؤولة عن تحليل اسم الملف وربطه بالمشروع المناسب (Project)
     وإنشاء الهيكلية التلقائية لملفات הـ Data الخاصة بالمشروع.
     """
     def __init__(self, projects_dir="projects"):
@@ -17,17 +17,17 @@ class ProjectResolution:
         name = re.sub(r'\s+', '-', name)
         return name
 
-    def resolve_project(self, filepath, force_anime_name=None):
+    def resolve_project(self, filepath, force_project_name=None):
         """تحليل مسار الملف واستخراج الأنمي ورقم الحلقة"""
         filename = os.path.basename(filepath)
-        anime_name = None
+        project_name = None
         episode_name = "ep01"
         
         try:
             from guessit import guessit
             info = guessit(filename)
             if 'title' in info:
-                anime_name = self.sanitize_name(info['title'])
+                project_name = self.sanitize_name(info['title'])
             if 'episode' in info:
                 ep_num = info['episode']
                 season = info.get('season', 1)
@@ -40,18 +40,18 @@ class ProjectResolution:
             if match:
                 s, e = match.groups()
                 if match.start() == 0:
-                    anime_name = self.sanitize_name(clean_name[match.end():])
+                    project_name = self.sanitize_name(clean_name[match.end():])
                 else:
-                    anime_name = self.sanitize_name(clean_name[:match.start()])
+                    project_name = self.sanitize_name(clean_name[:match.start()])
                     
-                if not anime_name:
-                    anime_name = "unknown-anime"
+                if not project_name:
+                    project_name = "unknown-project"
                     
                 episode_name = f"s{int(s):02d}e{int(e):02d}"
             else:
                 parts = clean_name.split(' - ')
                 if len(parts) >= 2:
-                    anime_name = self.sanitize_name(parts[0])
+                    project_name = self.sanitize_name(parts[0])
                     episode_name = f"ep_{self.sanitize_name(parts[1])}"
                 else:
                     # Fallback for standalone numbers like "01.ass"
@@ -60,19 +60,19 @@ class ProjectResolution:
                         episode_name = f"ep_{int(num_match.group(1)):02d}"
                     
         # Override with forced name if provided
-        if force_anime_name:
-            anime_name = self.sanitize_name(force_anime_name)
+        if force_project_name:
+            project_name = self.sanitize_name(force_project_name)
         else:
             # استخراج اسم المجلد الأب كخيار إنقاذ إذا كان اسم الملف ضعيفاً أو مجرد أرقام
-            if not anime_name or len(anime_name.replace('-', '')) < 2 or anime_name in ["unknown-project", "unknown-anime"] or anime_name.replace('-', '').isdigit():
+            if not project_name or len(project_name.replace('-', '')) < 2 or project_name in ["unknown-project", "unknown-project"] or project_name.replace('-', '').isdigit():
                 parent_dir = os.path.basename(os.path.dirname(os.path.abspath(filepath)))
                 if parent_dir and parent_dir.lower() not in ['downloads', 'desktop', 'documents']:
-                    anime_name = self.sanitize_name(parent_dir)
+                    project_name = self.sanitize_name(parent_dir)
                     
-            if not anime_name or anime_name == "-":
-                anime_name = "unknown-anime"
+            if not project_name or project_name == "-":
+                project_name = "unknown-project"
 
-        project_path = os.path.join(self.projects_dir, anime_name)
+        project_path = os.path.join(self.projects_dir, project_name)
         data_path = os.path.join(project_path, 'data')
         episodes_path = os.path.join(project_path, 'episodes', episode_name)
         
@@ -89,7 +89,7 @@ class ProjectResolution:
                     json.dump({}, f, ensure_ascii=False, indent=2)
                     
         return {
-            "anime": anime_name,
+            "project": project_name,
             "episode": episode_name,
             "project_path": project_path,
             "data_path": data_path,

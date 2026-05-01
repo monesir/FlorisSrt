@@ -29,10 +29,10 @@ class RunTab(QWidget):
         file_layout.addWidget(self.browse_folder_btn)
         layout.addLayout(file_layout)
         
-        self.lbl_anime = QLabel("Anime: None")
+        self.lbl_project = QLabel("Project: None")
         self.lbl_episode = QLabel("Episode: None")
         layout.addWidget(QLabel("<b>Detected Project</b>"))
-        layout.addWidget(self.lbl_anime)
+        layout.addWidget(self.lbl_project)
         layout.addWidget(self.lbl_episode)
         
         controls_layout = QHBoxLayout()
@@ -288,10 +288,10 @@ class ReviewTab(QWidget):
         layout = QVBoxLayout(self)
         
         top_lay = QHBoxLayout()
-        top_lay.addWidget(QLabel("Anime:"))
-        self.anime_cb = QComboBox()
-        self.anime_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-        top_lay.addWidget(self.anime_cb)
+        top_lay.addWidget(QLabel("Project:"))
+        self.project_cb = QComboBox()
+        self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        top_lay.addWidget(self.project_cb)
         
         top_lay.addWidget(QLabel("Episode:"))
         self.episode_cb = QComboBox()
@@ -367,7 +367,7 @@ class AnalyzeTab(QWidget):
         
         # Action Section
         act_lay = QHBoxLayout()
-        act_lay.addWidget(QLabel("Target Project (Anime Name):"))
+        act_lay.addWidget(QLabel("Target Project (Project Name):"))
         self.project_cb = QComboBox()
         self.project_cb.setEditable(True)
         self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)

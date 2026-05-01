@@ -1,0 +1,70 @@
+{
+  "characters": [
+    {
+      "name": "Melissa Moretti",
+      "arabic_name": "ميليسا موريتي",
+      "gender": "unknown",
+      "description": "Younger sister of Klein, student at Tingen Technical School."
+    },
+    {
+      "name": "Klein",
+      "arabic_name": "كلاين",
+      "gender": "unknown",
+      "description": "The protagonist who transmigrates into Klein Moretti's body."
+    },
+    {
+      "name": "Audrey Hall",
+      "arabic_name": "أودري هول",
+      "gender": "unknown",
+      "description": "Member of the Tarot Club, associated with Justice."
+    },
+    {
+      "name": "Alger Wilson",
+      "arabic_name": "ألجر ويلسون",
+      "gender": "unknown",
+      "description": "Member of the Tarot Club, associated with The Hanged Man."
+    },
+    {
+      "name": "Leonard Mitchell",
+      "arabic_name": "ليونارد ميتشل",
+      "gender": "unknown",
+      "description": "Member of Awwa County Police in the Loen Kingdom."
+    },
+    {
+      "name": "Dunn Smith",
+      "arabic_name": "دن سميث",
+      "gender": "unknown",
+      "description": "Member of Awwa County Police and Nighthawk, associated with the Evernight Goddess."
+    },
+    {
+      "name": "Daly Simone",
+      "arabic_name": "دالي سيمون",
+      "gender": "unknown",
+      "description": "Associated with the Evernight Goddess and Nighthawk."
+    },
+    {
+      "name": "Klein Moretti",
+      "arabic_name": "كلاين موريتي",
+      "gender": "unknown",
+      "description": "The original owner of the body Klein transmigrated into. Classmate of Welch and Naya."
+    },
+    {
+      "name": "Welch",
+      "arabic_name": "ويلش",
+      "gender": "unknown",
+      "description": "History graduate from Khoy, one of the decedents."
+    },
+    {
+      "name": "Naya",
+      "arabic_name": "نايا",
+      "gender": "unknown",
+      "description": "History graduate from Khoy, one of the decedents."
+    },
+    {
+      "name": "Wright",
+      "arabic_name": "رايت",
+      "gender": "unknown",
+      "description": "A contact person mentioned for those wishing to join 'us'."
+    }
+  ]
+}
