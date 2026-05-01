@@ -29,49 +29,54 @@ class ExtractorEngine:
         else:
             self.client = OpenAI(api_key=api_key)
 
-    def extract_from_text(self, text, source_lang="English", work_context=""):
+    def extract_from_text(self, text, source_lang="English", work_context="", mode="Balanced", translate_result=True):
         """
         يستخرج الشخصيات والمصطلحات من النص ويعيدها بصيغة JSON
         """
         context_block = f"\nStory/Project Context:\n{work_context}\n" if work_context else ""
         
-        if source_lang.lower() == "arabic":
-            system_prompt = f"""You are an expert anime localizer analyzing Arabic subtitle text.
-Your task is to extract important narrative elements to build a localization glossary.
-
-{context_block}
-Extract the following:
-1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their deduced English/Romaji name as "name", the Arabic name exactly as written in the text as "arabic_name", and a brief description of their role.
-2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Provide the deduced English/Romaji term as "term", the exact Arabic translation used in the text as "translation_suggestion", and classify its type (location/ability/organization/etc).
-
-You MUST respond strictly in valid JSON format with the following schema:
-{{
-  "characters": [
-    {{"name": "...", "arabic_name": "...", "description": "..."}}
-  ],
-  "terms": [
-    {{"term": "...", "translation_suggestion": "...", "type": "..."}}
-  ]
-}}
-If none are found, return empty arrays."""
+        # Decide what to extract based on mode
+        extract_instructions = []
+        schema_dict = {}
+        
+        # Translation instructions
+        if translate_result:
+            char_translation_inst = 'the exact Arabic translation used in the text as "arabic_name"' if source_lang.lower() == "arabic" else 'suggest an accurate Arabic translation/transliteration for their name as "arabic_name"'
+            char_name_inst = 'their deduced English/Romaji name as "name"' if source_lang.lower() == "arabic" else 'their original name as "name"'
+            term_translation_inst = 'the exact Arabic translation used in the text as "translation_suggestion"' if source_lang.lower() == "arabic" else 'Suggest a precise Arabic translation as "translation_suggestion"'
+            term_name_inst = 'the deduced English/Romaji term as "term"' if source_lang.lower() == "arabic" else 'the original term as "term"'
+            
+            char_json = '{"name": "...", "arabic_name": "...", "description": "..."}'
+            term_json = '{"term": "...", "translation_suggestion": "...", "type": "..."}'
         else:
-            system_prompt = f"""You are an expert anime localizer analyzing {source_lang} subtitle text.
+            char_name_inst = 'their original name as "name"'
+            char_translation_inst = 'Omit any arabic_name or translation field'
+            term_name_inst = 'the original term as "term"'
+            term_translation_inst = 'Omit any translation_suggestion field'
+            
+            char_json = '{"name": "...", "description": "..."}'
+            term_json = '{"term": "...", "type": "..."}'
+
+        if mode in ["Balanced", "Characters Only"]:
+            extract_instructions.append(f"1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide {char_name_inst}, {char_translation_inst}, and a brief description of their role/context.")
+            schema_dict["characters"] = [json.loads(char_json)]
+            
+        if mode in ["Balanced", "Terms Only"]:
+            extract_instructions.append(f"2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Provide {term_name_inst}, {term_translation_inst}, and classify its type (location/ability/organization/etc).")
+            schema_dict["terms"] = [json.loads(term_json)]
+            
+        instructions_text = "\n".join(extract_instructions)
+        schema_text = json.dumps(schema_dict, indent=2)
+
+        system_prompt = f"""You are an expert anime localizer analyzing {source_lang} subtitle text.
 Your task is to extract important narrative elements to build a localization glossary.
 
 {context_block}
 Extract the following:
-1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name, suggest an accurate Arabic translation/transliteration for their name, and a brief description of their role/context.
-2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation and classify its type (location/ability/organization/etc).
+{instructions_text}
 
 You MUST respond strictly in valid JSON format with the following schema:
-{{
-  "characters": [
-    {{"name": "...", "arabic_name": "...", "description": "..."}}
-  ],
-  "terms": [
-    {{"term": "...", "translation_suggestion": "...", "type": "..."}}
-  ]
-}}
+{schema_text}
 If none are found, return empty arrays."""
         
         user_prompt = f"Subtitle Text:\n{text}"
@@ -129,7 +134,7 @@ If none are found, return empty arrays."""
                 
         return {"characters": [], "terms": []}
 
-    def process_file(self, filepath, source_lang, work_context="", progress_callback=None, log_callback=None, chunk_size=75):
+    def process_file(self, filepath, source_lang, work_context="", progress_callback=None, log_callback=None, chunk_size=75, mode="Balanced", translate_result=True):
         """
         يقرأ الملف، يقسمه لكتل، ويستخرج منها البيانات.
         """
@@ -161,7 +166,7 @@ If none are found, return empty arrays."""
                 
             text_block = "\n".join([strip_tags(seg['text']) for seg in chunk])
             if log_callback: log_callback(f"Analyzing chunk {idx+1}/{len(chunks)}...")
-            result = self.extract_from_text(text_block, source_lang, work_context)
+            result = self.extract_from_text(text_block, source_lang, work_context, mode, translate_result)
             
             if "error" in result:
                 if log_callback: log_callback(f"Error in chunk {idx+1}: {result['error']}")

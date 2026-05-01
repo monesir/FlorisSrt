@@ -72,12 +72,14 @@ class ExtractorWorker(QThread):
     error_occurred = Signal(str)
     log_updated = Signal(str)
 
-    def __init__(self, cfg, file_paths, source_lang, work_context=""):
+    def __init__(self, cfg, file_paths, source_lang, work_context="", mode="Balanced", translate_result=True):
         super().__init__()
         self.cfg = cfg
         self.file_paths = file_paths
         self.source_lang = source_lang
         self.work_context = work_context
+        self.mode = mode
+        self.translate_result = translate_result
 
     def run(self):
         try:
@@ -109,7 +111,7 @@ class ExtractorWorker(QThread):
                     self.log_updated.emit(msg)
                     
                 chunk_size = ext_cfg.get("chunk_size", 75)
-                res = engine.process_file(fp, self.source_lang, self.work_context, prog_cb, log_cb, chunk_size=chunk_size)
+                res = engine.process_file(fp, self.source_lang, self.work_context, prog_cb, log_cb, chunk_size=chunk_size, mode=self.mode, translate_result=self.translate_result)
                 
                 merged_result["characters"].extend(res.get("characters", []))
                 merged_result["terms"].extend(res.get("terms", []))
@@ -1109,12 +1111,15 @@ class AppController:
         if manual_ctx:
             work_context = manual_ctx
         
-        self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context)
-        self.extractor_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
-        self.extractor_worker.log_updated.connect(lambda msg: self.window.analyze_tab.log_console.append(msg))
-        self.extractor_worker.finished_extraction.connect(self._on_analyze_finished)
-        self.extractor_worker.error_occurred.connect(self._on_analyze_error)
-        self.extractor_worker.start()
+        mode = self.window.analyze_tab.mode_cb.currentText()
+        translate_result = self.window.analyze_tab.chk_translate.isChecked()
+        
+        self.ext_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context, mode, translate_result)
+        self.ext_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
+        self.ext_worker.log_updated.connect(lambda msg: self.window.analyze_tab.log_console.append(msg))
+        self.ext_worker.finished_extraction.connect(self._on_analyze_finished)
+        self.ext_worker.error_occurred.connect(self._on_analyze_error)
+        self.ext_worker.start()
 
     def _on_analyze_finished(self, result):
         self.window.analyze_tab.btn_start.setEnabled(True)

@@ -353,6 +353,16 @@ class AnalyzeTab(QWidget):
         self.lang_cb = QComboBox()
         self.lang_cb.addItems(["English", "Arabic"])
         cfg_lay.addWidget(self.lang_cb)
+        
+        cfg_lay.addWidget(QLabel("Mode:"))
+        self.mode_cb = QComboBox()
+        self.mode_cb.addItems(["Balanced", "Characters Only", "Terms Only"])
+        cfg_lay.addWidget(self.mode_cb)
+        
+        self.chk_translate = QCheckBox("Translate Result")
+        self.chk_translate.setChecked(True)
+        cfg_lay.addWidget(self.chk_translate)
+        
         layout.addLayout(cfg_lay)
         
         # Action Section
