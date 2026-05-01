@@ -1098,7 +1098,8 @@ class AppController:
             chk.setCheckState(Qt.Checked)
             ctable.setItem(r, 0, chk)
             ctable.setItem(r, 1, QTableWidgetItem(char.get('name', '')))
-            ctable.setItem(r, 2, QTableWidgetItem(char.get('description', '')))
+            ctable.setItem(r, 2, QTableWidgetItem(char.get('arabic_name', '')))
+            ctable.setItem(r, 3, QTableWidgetItem(char.get('description', '')))
             
         # Populate Terms
         terms = result.get("terms", [])
@@ -1142,9 +1143,10 @@ class AppController:
         for r in range(ctable.rowCount()):
             if ctable.item(r, 0).checkState() == Qt.Checked:
                 name = ctable.item(r, 1).text().strip()
-                desc = ctable.item(r, 2).text().strip()
+                arabic_name = ctable.item(r, 2).text().strip()
+                desc = ctable.item(r, 3).text().strip()
                 if name and name.lower() not in existing_char_names:
-                    existing_chars.append({"name": name, "arabic_name": "", "gender": "unknown", "description": desc})
+                    existing_chars.append({"name": name, "arabic_name": arabic_name, "gender": "unknown", "description": desc})
                     existing_char_names.add(name.lower())
                     added_count += 1
                     
@@ -1178,9 +1180,10 @@ class AppController:
         for r in range(ctable.rowCount()):
             if ctable.item(r, 0).checkState() == Qt.Checked:
                 name = ctable.item(r, 1).text().strip()
-                desc = ctable.item(r, 2).text().strip()
+                arabic_name = ctable.item(r, 2).text().strip()
+                desc = ctable.item(r, 3).text().strip()
                 if name:
-                    new_chars.append({"name": name, "arabic_name": "", "gender": "unknown", "description": desc})
+                    new_chars.append({"name": name, "arabic_name": arabic_name, "gender": "unknown", "description": desc})
                     
         # Collect Terms
         new_terms = []
@@ -1191,7 +1194,7 @@ class AppController:
                 trans = gtable.item(r, 2).text().strip()
                 typ = gtable.item(r, 3).text().strip()
                 if term:
-                    new_terms.append({"term": term, "translation": trans, "type": typ})
+                    new_terms.append({"term": term, "translation": trans, "category": typ, "type": "hard"})
                     
         dir_path = QFileDialog.getExistingDirectory(self.window, "Select Export Folder")
         if dir_path:

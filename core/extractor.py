@@ -41,13 +41,13 @@ Your task is to extract important narrative elements to build a localization glo
 
 {context_block}
 Extract the following:
-1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their Arabic name and a brief description of their role/context.
+1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name, suggest an accurate Arabic translation/transliteration for their name, and a brief description of their role/context.
 2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation (or keep it as is if it's a proper noun) and classify its type (location/ability/organization/etc).
 
 You MUST respond strictly in valid JSON format with the following schema:
 {{
   "characters": [
-    {{"name": "...", "description": "..."}}
+    {{"name": "...", "arabic_name": "...", "description": "..."}}
   ],
   "terms": [
     {{"term": "...", "translation_suggestion": "...", "type": "..."}}
@@ -60,13 +60,13 @@ Your task is to extract important narrative elements to build a localization glo
 
 {context_block}
 Extract the following:
-1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name and a brief description of their role/context.
+1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name, suggest an accurate Arabic translation/transliteration for their name, and a brief description of their role/context.
 2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation and classify its type (location/ability/organization/etc).
 
 You MUST respond strictly in valid JSON format with the following schema:
 {{
   "characters": [
-    {{"name": "...", "description": "..."}}
+    {{"name": "...", "arabic_name": "...", "description": "..."}}
   ],
   "terms": [
     {{"term": "...", "translation_suggestion": "...", "type": "..."}}

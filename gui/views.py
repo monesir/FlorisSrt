@@ -396,8 +396,8 @@ class AnalyzeTab(QWidget):
         # Characters Tab
         self.char_tab = QWidget()
         char_lay = QVBoxLayout(self.char_tab)
-        self.char_table = QTableWidget(0, 3)
-        self.char_table.setHorizontalHeaderLabels(["Select", "Character Name", "Description / Role"])
+        self.char_table = QTableWidget(0, 4)
+        self.char_table.setHorizontalHeaderLabels(["Select", "Character Name", "Arabic Name", "Description / Role"])
         self.char_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.char_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.ResizeToContents)
         char_lay.addWidget(self.char_table)
