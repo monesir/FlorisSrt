@@ -457,5 +457,3 @@ class MainWindow(QMainWindow):
         self.lbl_status_right = QLabel("Project: None")
         self.status_bar.addWidget(self.lbl_status_left, 1)
         self.status_bar.addPermanentWidget(self.lbl_status_right)
-
-        self.data_editor_tab.setEnabled(False)
