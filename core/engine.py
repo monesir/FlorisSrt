@@ -30,11 +30,13 @@ class TranslationEngine:
     يحتوي على طبقة (Fault-Tolerant) للتعامل مع الـ Timeouts و הـ Rate Limits بأسلوب
     Exponential Backoff، وحماية الـ Circuit Breaker.
     """
-    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False):
+    def __init__(self, api_key, provider="openai", base_url=None, model_name=None, log_language="Bilingual", translation_style="Standard (فصحى)", force_single_line=False, timeout=120, max_retries=3):
         global log_lang
         log_lang = log_language
         self.translation_style = translation_style
         self.force_single_line = force_single_line
+        self.timeout = timeout
+        self.max_retries = max_retries
         
         if provider == "deepseek" and not base_url:
             base_url = "https://api.deepseek.com"
@@ -59,7 +61,7 @@ class TranslationEngine:
         self.consecutive_failures = 0
         self.circuit_open = False
         
-    def call_llm(self, system_prompt, user_prompt, timeout=120):
+    def call_llm(self, system_prompt, user_prompt):
         """الاتصال المباشر بالـ API مع سقف للـ Timeout"""
         response = self.client.chat.completions.create(
             model=self.model,
@@ -68,7 +70,7 @@ class TranslationEngine:
                 {"role": "user", "content": user_prompt}
             ],
             response_format={"type": "json_object"},
-            timeout=timeout
+            timeout=self.timeout
         )
         usage = response.usage
         return {
@@ -80,7 +82,7 @@ class TranslationEngine:
             }
         }
 
-    def execute_with_fault_tolerance(self, system_prompt, user_prompt, max_retries=4):
+    def execute_with_fault_tolerance(self, system_prompt, user_prompt):
         """تنفيذ الاتصال مع حماية הـ Exponential Backoff"""
         if self.circuit_open:
             t_print("Circuit breaker is open. Waiting 60 seconds before resuming...", "تم تفعيل حماية الضغط (Circuit Breaker). انتظار 60 ثانية قبل الاستئناف...", False)
@@ -88,7 +90,7 @@ class TranslationEngine:
             self.circuit_open = False
             self.consecutive_failures = 0
             
-        for attempt in range(max_retries):
+        for attempt in range(self.max_retries):
             try:
                 res = self.call_llm(system_prompt, user_prompt)
                 self.consecutive_failures = 0 # تصفير العداد عند النجاح
@@ -100,7 +102,7 @@ class TranslationEngine:
                     self.circuit_open = True # فتح قاطع الدائرة
                     
                 wait_time = 2 ** attempt # 1, 2, 4, 8...
-                t_print(f"Network/API Error Attempt {attempt+1}/{max_retries}: {e}. Retrying in {wait_time}s...")
+                t_print(f"Network/API Error Attempt {attempt+1}/{self.max_retries}: {e}. Retrying in {wait_time}s...")
                 time.sleep(wait_time)
                 
         # الانهيار الآمن بعد نفاد المحاولات الشبكية
@@ -187,7 +189,7 @@ class TranslationEngine:
         retry_type = "full"
         last_valid_segments = []
         
-        for attempt in range(3): # 3 محاولات كحد أقصى للـ Validator
+        for attempt in range(self.max_retries): # محاولات كحد أقصى للـ Validator
             
             if retry_type == "full":
                 t_print(f"Sending data to engine ({self.model})... please wait", f"إرسال البيانات للمحرك ({self.model})... يرجى الانتظار", False)

@@ -514,6 +514,9 @@ class AppController:
         trans_style = self.config_cache.get("preferences", {}).get("translation_style", "Standard (فصحى)")
         force_single = self.config_cache.get("preferences", {}).get("force_single_line", False)
         
+        timeout_val = self.config_cache.get("execution", {}).get("timeout", 120)
+        max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
+        
         self.runner.start(
             file_path=path,
             provider=provider,
@@ -523,7 +526,9 @@ class AppController:
             project_name=getattr(self, 'batch_project_name', None),
             log_language=log_lang,
             translation_style=trans_style,
-            force_single_line=force_single
+            force_single_line=force_single,
+            timeout=timeout_val,
+            max_retries=max_retries_val
         )
 
     def _resume_translation(self):
@@ -539,6 +544,9 @@ class AppController:
         trans_style = self.config_cache.get("preferences", {}).get("translation_style", "Standard (فصحى)")
         force_single = self.config_cache.get("preferences", {}).get("force_single_line", False)
         
+        timeout_val = self.config_cache.get("execution", {}).get("timeout", 120)
+        max_retries_val = self.config_cache.get("execution", {}).get("max_retries", 3)
+        
         self._log_internal("Resuming translation...", "جاري استئناف الترجمة...")
         self.runner.start(
             file_path=path,
@@ -549,7 +557,9 @@ class AppController:
             project_name=getattr(self, 'batch_project_name', None),
             log_language=log_lang,
             translation_style=trans_style,
-            force_single_line=force_single
+            force_single_line=force_single,
+            timeout=timeout_val,
+            max_retries=max_retries_val
         )
 
     def _stop_translation(self):

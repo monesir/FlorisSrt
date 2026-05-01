@@ -47,6 +47,8 @@ def main():
     parser.add_argument("--log-language", help="Log Language", default="Bilingual")
     parser.add_argument("--translation-style", help="Translation Style (Standard/Colloquial)", default="Standard (فصحى)")
     parser.add_argument("--force-single-line", action="store_true", help="Force single line output")
+    parser.add_argument("--timeout", type=int, default=120, help="API Timeout in seconds")
+    parser.add_argument("--max-retries", type=int, default=3, help="Max retries for API and Validation")
     
     args = parser.parse_args()
     
@@ -71,7 +73,9 @@ def main():
         model_name=args.model_name, 
         log_language=args.log_language,
         translation_style=args.translation_style,
-        force_single_line=args.force_single_line
+        force_single_line=args.force_single_line,
+        timeout=args.timeout,
+        max_retries=args.max_retries
     )
     validator = Validator()
     constraint_engine = ConstraintEngine()
