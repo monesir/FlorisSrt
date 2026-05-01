@@ -72,11 +72,12 @@ class ExtractorWorker(QThread):
     error_occurred = Signal(str)
     log_updated = Signal(str)
 
-    def __init__(self, cfg, file_paths, source_lang):
+    def __init__(self, cfg, file_paths, source_lang, work_context=""):
         super().__init__()
         self.cfg = cfg
         self.file_paths = file_paths
         self.source_lang = source_lang
+        self.work_context = work_context
 
     def run(self):
         try:
@@ -107,7 +108,7 @@ class ExtractorWorker(QThread):
                 def log_cb(msg):
                     self.log_updated.emit(msg)
                     
-                res = engine.process_file(fp, self.source_lang, prog_cb, log_cb)
+                res = engine.process_file(fp, self.source_lang, self.work_context, prog_cb, log_cb)
                 
                 merged_result["characters"].extend(res.get("characters", []))
                 merged_result["terms"].extend(res.get("terms", []))
@@ -939,7 +940,13 @@ class AppController:
         self.window.analyze_tab.progress_bar.setValue(0)
         self.window.analyze_tab.log_console.clear()
         
-        self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang)
+        project = self.window.analyze_tab.project_cb.currentText().strip()
+        work_context = ""
+        if project:
+            ctx_data = self.project_service.load_project_data(project, "work_context.json")
+            work_context = ctx_data.get("description", "")
+        
+        self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context)
         self.extractor_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
         self.extractor_worker.log_updated.connect(lambda msg: self.window.analyze_tab.log_console.append(msg))
         self.extractor_worker.finished_extraction.connect(self._on_analyze_finished)

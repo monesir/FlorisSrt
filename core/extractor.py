@@ -29,26 +29,50 @@ class ExtractorEngine:
         else:
             self.client = OpenAI(api_key=api_key)
 
-    def extract_from_text(self, text, source_lang="English"):
+    def extract_from_text(self, text, source_lang="English", work_context=""):
         """
         يستخرج الشخصيات والمصطلحات من النص ويعيدها بصيغة JSON
         """
-        system_prompt = f"""You are an expert anime localizer.
-Your task is to analyze the following {source_lang} subtitle text and extract:
-1. Character Names: Anyone speaking, spoken to, or mentioned.
-2. Glossary Terms: Unique locations, abilities, slang, organizations, or specific terms.
+        context_block = f"\nStory/Project Context:\n{work_context}\n" if work_context else ""
+        
+        if source_lang.lower() == "arabic":
+            system_prompt = f"""You are an expert anime localizer analyzing Arabic subtitle text.
+Your task is to extract important narrative elements to build a localization glossary.
+
+{context_block}
+Extract the following:
+1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their Arabic name and a brief description of their role/context.
+2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation (or keep it as is if it's a proper noun) and classify its type (location/ability/organization/etc).
 
 You MUST respond strictly in valid JSON format with the following schema:
 {{
   "characters": [
-    {{"name": "...", "description": "Brief context about the character"}}
+    {{"name": "...", "description": "..."}}
   ],
   "terms": [
-    {{"term": "...", "translation_suggestion": "Suggested Arabic translation", "type": "location/ability/etc"}}
+    {{"term": "...", "translation_suggestion": "...", "type": "..."}}
   ]
 }}
-If none are found, return empty arrays.
-"""
+If none are found, return empty arrays."""
+        else:
+            system_prompt = f"""You are an expert anime localizer analyzing {source_lang} subtitle text.
+Your task is to extract important narrative elements to build a localization glossary.
+
+{context_block}
+Extract the following:
+1. Character Names: Anyone speaking, spoken to, or mentioned in the text. Provide their original name and a brief description of their role/context.
+2. Glossary Terms: Unique locations, abilities, specific in-world slang, organizations, or objects. Suggest a precise Arabic translation and classify its type (location/ability/organization/etc).
+
+You MUST respond strictly in valid JSON format with the following schema:
+{{
+  "characters": [
+    {{"name": "...", "description": "..."}}
+  ],
+  "terms": [
+    {{"term": "...", "translation_suggestion": "...", "type": "..."}}
+  ]
+}}
+If none are found, return empty arrays."""
         
         user_prompt = f"Subtitle Text:\n{text}"
         
@@ -97,9 +121,9 @@ If none are found, return empty arrays.
                 
         return {"characters": [], "terms": []}
 
-    def process_file(self, filepath, source_lang, progress_callback=None, log_callback=None):
+    def process_file(self, filepath, source_lang, work_context="", progress_callback=None, log_callback=None):
         """
-        يقرأ الملف، يقسمه لكتل كبيرة (200 سطر)، ويستخرج منها البيانات.
+        يقرأ الملف، يقسمه لكتل (75 سطر)، ويستخرج منها البيانات.
         """
         from parsers.subtitle_parser import SubtitleParser
         parser = SubtitleParser()
@@ -110,7 +134,7 @@ If none are found, return empty arrays.
             if log_callback: log_callback(f"Failed to parse {filepath}: {e}")
             return {"characters": [], "terms": []}
             
-        chunk_size = 150 # Reduced from 200 to avoid token limits and truncated JSON
+        chunk_size = 75 # Reduced to 75 to avoid token limits and truncated JSON
         chunks = [segments[i:i + chunk_size] for i in range(0, len(segments), chunk_size)]
         
         if log_callback: log_callback(f"Split file into {len(chunks)} chunks.")
@@ -124,7 +148,7 @@ If none are found, return empty arrays.
                 
             text_block = "\n".join([seg['text'] for seg in chunk])
             if log_callback: log_callback(f"Analyzing chunk {idx+1}/{len(chunks)}...")
-            result = self.extract_from_text(text_block, source_lang)
+            result = self.extract_from_text(text_block, source_lang, work_context)
             
             if "error" in result:
                 if log_callback: log_callback(f"Error in chunk {idx+1}: {result['error']}")
