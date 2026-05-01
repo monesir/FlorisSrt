@@ -497,7 +497,7 @@ class AppController:
             api_key=api_key,
             model_name=model_name,
             resume=False,
-            project_name=None,
+            project_name=getattr(self, 'batch_project_name', None),
             log_language=log_lang,
             translation_style=trans_style,
             force_single_line=force_single
