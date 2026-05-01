@@ -241,7 +241,7 @@ class AppController:
         chars = char_data.get("characters", [])
         self.window.data_editor_tab.char_table.setRowCount(0)
         for c in chars:
-            self._add_character_row(c.get("name", ""), c.get("gender", "unknown"))
+            self._add_character_row(c.get("name", ""), c.get("arabic_name", ""), c.get("gender", "unknown"))
             
         glos_data = self.project_service.load_project_data(self.current_anime, "glossary.json")
         terms = glos_data.get("terms", [])
@@ -257,15 +257,16 @@ class AppController:
         for term, data in term_data.items():
             self._add_term_memory_row(term, data.get("translation", ""), data.get("count", 0), data.get("locked", False))
 
-    def _add_character_row(self, name="", gender="unknown"):
+    def _add_character_row(self, name="", arabic_name="", gender="unknown"):
         table = self.window.data_editor_tab.char_table
         row = table.rowCount()
         table.insertRow(row)
         table.setItem(row, 0, QTableWidgetItem(name))
+        table.setItem(row, 1, QTableWidgetItem(arabic_name))
         cb = QComboBox()
         cb.addItems(["male", "female", "unknown"])
         cb.setCurrentText(gender)
-        table.setCellWidget(row, 1, cb)
+        table.setCellWidget(row, 2, cb)
 
     def _add_glossary_row(self, term="", trans="", type="hard"):
         table = self.window.data_editor_tab.glos_table
@@ -314,9 +315,14 @@ class AppController:
         chars = []
         for i in range(table.rowCount()):
             name = table.item(i, 0).text().strip()
-            gender = table.cellWidget(i, 1).currentText()
+            arabic_item = table.item(i, 1)
+            arabic_name = arabic_item.text().strip() if arabic_item else ""
+            gender = table.cellWidget(i, 2).currentText()
             if name:
-                chars.append({"name": name, "gender": gender})
+                char_obj = {"name": name, "gender": gender}
+                if arabic_name:
+                    char_obj["arabic_name"] = arabic_name
+                chars.append(char_obj)
         self.project_service.save_project_data(self.current_anime, "characters.json", {"characters": chars})
         QMessageBox.information(self.window, "Saved", "Characters saved.")
 

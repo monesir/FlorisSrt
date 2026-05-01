@@ -174,8 +174,8 @@ class DataEditorTab(QWidget):
         
         self.char_tab = QWidget()
         char_lay = QVBoxLayout(self.char_tab)
-        self.char_table = QTableWidget(0, 2)
-        self.char_table.setHorizontalHeaderLabels(["Name", "Gender"])
+        self.char_table = QTableWidget(0, 3)
+        self.char_table.setHorizontalHeaderLabels(["Name", "Arabic Name", "Gender"])
         self.char_table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
         self.char_table.setSelectionBehavior(QAbstractItemView.SelectRows)
         char_lay.addWidget(self.char_table)
