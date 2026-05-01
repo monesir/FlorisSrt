@@ -1,5 +1,7 @@
 import sys
 import os
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import json
 import urllib.request
 import urllib.error
@@ -9,7 +11,7 @@ from PySide6.QtCore import QTimer, Qt, QProcess, QThread, Signal
 from views import MainWindow
 from services import ProjectService, ConfigService, RunnerService
 from core.state_manager import StateManager
-from core.parsers.rebuilder import Rebuilder
+from parsers.rebuilder import Rebuilder
 
 class ConnectionTester(QThread):
     result_ready = Signal(str, bool)
