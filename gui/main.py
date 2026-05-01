@@ -1012,6 +1012,10 @@ class AppController:
         if project:
             ctx_data = self.project_service.load_project_data(project, "work_context.json")
             work_context = ctx_data.get("description", "")
+            
+        manual_ctx = self.window.analyze_tab.work_context_input.text().strip()
+        if manual_ctx:
+            work_context = manual_ctx
         
         self.extractor_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context)
         self.extractor_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))

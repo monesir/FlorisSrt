@@ -364,6 +364,13 @@ class AnalyzeTab(QWidget):
         act_lay.addWidget(self.btn_start)
         layout.addLayout(act_lay)
         
+        ctx_lay = QHBoxLayout()
+        ctx_lay.addWidget(QLabel("Manual Work Context (Optional):"))
+        self.work_context_input = QLineEdit()
+        self.work_context_input.setPlaceholderText("e.g., A story about Saiyans... (Overrides project context if filled)")
+        ctx_lay.addWidget(self.work_context_input)
+        layout.addLayout(ctx_lay)
+        
         # Progress
         self.progress_bar = QProgressBar()
         self.progress_bar.setValue(0)
