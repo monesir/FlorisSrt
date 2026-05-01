@@ -59,22 +59,28 @@ class ConstraintEngine:
 
     def apply_constraints(self, segment):
         """تطبيق القيود على السطر وإرجاع حالة الضغط للـ Logs"""
+        import re
         text = segment['translated']
         duration = self.calculate_duration(segment['start'], segment['end'])
-        cps_before = self.calculate_cps(text, duration)
+        
+        # استخراج النص المرئي فقط لحساب الطول والـ CPS بدون وسوم الـ ASS
+        visible_text = re.sub(r'\{.*?\}', '', text)
+        visible_len = len(visible_text)
+        cps_before = self.calculate_cps(visible_text, duration)
         
         compressed = False
         lines_split = 1
         
         # إذا הـ CPS مرتفع جداً، نقوم بضغط النص برمجياً أولاً
         if cps_before > 20:
-            original_len = len(text)
             text = self.programmatic_compress(text)
-            if len(text) < original_len:
+            new_visible_text = re.sub(r'\{.*?\}', '', text)
+            if len(new_visible_text) < visible_len:
                 compressed = True
+                visible_text = new_visible_text
                 
         # إذا كان السطر طويلاً أو הـ CPS ما زال مرتفعاً، نفرض التقسيم
-        if self.calculate_cps(text, duration) > 17 or len(text) > self.max_length:
+        if self.calculate_cps(visible_text, duration) > 17 or len(visible_text) > self.max_length:
             if '\n' not in text:
                 text = self.smart_split(text)
                 lines_split = 2
