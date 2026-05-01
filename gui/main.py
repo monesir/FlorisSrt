@@ -64,7 +64,7 @@ class ConnectionTester(QThread):
         except Exception:
             self.result_ready.emit("Failed: Exception", False)
 
-from PySide6.QtCore import pyqtSignal
+from PySide6.QtCore import Signal
 
 class ExtractorWorker(QThread):
     progress_updated = Signal(int, int)
@@ -879,34 +879,6 @@ class AppController:
                 except Exception:
                     pass
 
-if __name__ == "__main__":
-    import ctypes
-    import os
-    import sys
-    
-    if len(sys.argv) > 1 and sys.argv[1] == "--pipeline":
-        # PyInstaller subprocess mode
-        sys.argv.pop(1) # Remove --pipeline so pipeline.py argparse works
-        
-        # Add root dir to path so imports work
-        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        if getattr(sys, 'frozen', False):
-            root_dir = sys._MEIPASS
-        sys.path.insert(0, root_dir)
-        
-        import pipeline
-        pipeline.main()
-        sys.exit(0)
-
-    if os.name == 'nt':
-        myappid = 'monesir.florissrt.app.1' # arbitrary string
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
-        
-    app = QApplication(sys.argv)
-    window = MainWindow()
-    controller = AppController(window)
-    window.show()
-    sys.exit(app.exec())
     # --- Pre-Analyze Tab Methods ---
     def _on_analyze_browse(self):
         paths, _ = QFileDialog.getOpenFileNames(self.window, "Select Subtitle Files", "", "Subtitle Files (*.ass *.srt)")
@@ -1029,3 +1001,32 @@ if __name__ == "__main__":
             
         QMessageBox.information(self.window, "Saved", f"Data saved to project '{project}' successfully!")
         self._refresh_data_editor() # Refresh UI
+
+if __name__ == "__main__":
+    import ctypes
+    import os
+    import sys
+    
+    if len(sys.argv) > 1 and sys.argv[1] == "--pipeline":
+        # PyInstaller subprocess mode
+        sys.argv.pop(1) # Remove --pipeline so pipeline.py argparse works
+        
+        # Add root dir to path so imports work
+        root_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        if getattr(sys, 'frozen', False):
+            root_dir = sys._MEIPASS
+        sys.path.insert(0, root_dir)
+        
+        import pipeline
+        pipeline.main()
+        sys.exit(0)
+
+    if os.name == 'nt':
+        myappid = 'monesir.florissrt.app.1' # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(myappid)
+        
+    app = QApplication(sys.argv)
+    window = MainWindow()
+    controller = AppController(window)
+    window.show()
+    sys.exit(app.exec())
