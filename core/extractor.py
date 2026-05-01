@@ -146,7 +146,12 @@ If none are found, return empty arrays."""
             if progress_callback:
                 progress_callback(idx, len(chunks))
                 
-            text_block = "\n".join([seg['text'] for seg in chunk])
+            import re
+            def strip_tags(text):
+                text = text.replace('\\N', ' ').replace('\\n', ' ')
+                return re.sub(r'\{.*?\}', '', text).strip()
+                
+            text_block = "\n".join([strip_tags(seg['text']) for seg in chunk])
             if log_callback: log_callback(f"Analyzing chunk {idx+1}/{len(chunks)}...")
             result = self.extract_from_text(text_block, source_lang, work_context)
             
