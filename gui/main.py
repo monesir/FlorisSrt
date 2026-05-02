@@ -13,6 +13,34 @@ from services import ProjectService, ConfigService, RunnerService
 from core.state_manager import StateManager
 from parsers.rebuilder import Rebuilder
 
+SHARED_MODELS = {
+    "gemini": [
+        "gemini-3.1-flash-lite-preview",
+        "gemini-3.1-pro-preview",
+        "gemini-2.5-pro",
+        "gemini-2.5-flash-lite",
+        "gemini-2.5-flash"
+    ],
+    "openrouter": [
+        "minimax/minimax-m2.5:free",
+        "tencent/hy3-preview:free",
+        "google/gemma-4-26b-a4b-it:free",
+        "google/gemma-4-31b-it:free",
+        "nvidia/nemotron-3-super-120b-a12b:free",
+        "qwen/qwen3.6-plus",
+        "deepseek/deepseek-v3.2"
+    ],
+    "deepseek": [
+        "deepseek-v4-pro",
+        "deepseek-v4-flash",
+        "deepseek-chat",
+        "deepseek-reasoner"
+    ],
+    "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o1", "o1-mini", "o3-mini"],
+    "anthropic": ["claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229", "claude-3-5-haiku"],
+    "local": ["local-model"]
+}
+
 class ConnectionTester(QThread):
     result_ready = Signal(str, bool)
 
@@ -434,17 +462,33 @@ class AppController:
         provider = provider.lower().strip()
         cb_model = self.window.usage_tab.model_input
         
-        provider_models = {
-            "openai": ["gpt-4o", "gpt-4o-mini", "o1", "o1-mini", "o3-mini"],
-            "deepseek": ["deepseek-chat", "deepseek-reasoner"],
-            "anthropic": ["claude-3-5-sonnet", "claude-3-opus", "claude-3-5-haiku", "claude-3-7-sonnet"],
-            "google": ["gemini-2.5-pro", "gemini-2.5-flash", "gemini-2.0-pro-exp"]
-        }
+        models = SHARED_MODELS.get(provider, []).copy()
         
-        models = provider_models.get(provider, [])
+        # 1. Sync from Settings Tab (Translation models)
+        if "providers" in self.config_cache:
+            prov_data = self.config_cache["providers"].get(provider, {})
+            if "name" in prov_data and prov_data["name"] and prov_data["name"] not in models:
+                models.insert(0, prov_data["name"])
+                
+        # 2. Sync from Settings Tab (Extraction models)
+        if "ext_providers" in self.config_cache:
+            ext_data = self.config_cache["ext_providers"].get(provider, {})
+            if "name" in ext_data and ext_data["name"] and ext_data["name"] not in models:
+                models.insert(0, ext_data["name"])
+                
+        # 3. Sync from Pricing config
+        pricing = self.usage_tracker.get_pricing()
+        prefix = f"{provider}:"
+        for key in pricing:
+            if key.startswith(prefix):
+                m_name = key[len(prefix):]
+                if m_name and m_name not in models:
+                    models.append(m_name)
+        
         cb_model.blockSignals(True)
         cb_model.clear()
-        cb_model.addItems(models)
+        if models:
+            cb_model.addItems(models)
         cb_model.blockSignals(False)
         self._on_pricing_key_changed()
 
@@ -969,31 +1013,7 @@ class AppController:
             self.config_cache["providers"][new_provider] = {}
         prov_data = self.config_cache["providers"][new_provider]
         
-        models = {
-            "gemini": [
-                "gemini-3.1-flash-lite-preview",
-                "gemini-3.1-pro-preview",
-                "gemini-2.5-pro",
-                "gemini-2.5-flash-lite"
-            ],
-            "openrouter": [
-                "minimax/minimax-m2.5:free",
-                "tencent/hy3-preview:free",
-                "google/gemma-4-26b-a4b-it:free",
-                "google/gemma-4-31b-it:free",
-                "nvidia/nemotron-3-super-120b-a12b:free",
-                "qwen/qwen3.6-plus",
-                "deepseek/deepseek-v3.2"
-            ],
-            "deepseek": [
-                "deepseek-v4-pro",
-                "deepseek-v4-flash",
-                "deepseek-chat"
-            ],
-            "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview"],
-            "anthropic": ["claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"],
-            "local": ["local-model"]
-        }
+        models = SHARED_MODELS
         
         # Update combobox items without triggering editTextChanged
         self.window.settings_tab.model_name.blockSignals(True)
@@ -1018,31 +1038,7 @@ class AppController:
             self.config_cache["ext_providers"][new_provider] = {}
         prov_data = self.config_cache["ext_providers"][new_provider]
         
-        models = {
-            "gemini": [
-                "gemini-3.1-flash-lite-preview",
-                "gemini-3.1-pro-preview",
-                "gemini-2.5-pro",
-                "gemini-2.5-flash-lite"
-            ],
-            "openrouter": [
-                "minimax/minimax-m2.5:free",
-                "tencent/hy3-preview:free",
-                "google/gemma-4-26b-a4b-it:free",
-                "google/gemma-4-31b-it:free",
-                "nvidia/nemotron-3-super-120b-a12b:free",
-                "qwen/qwen3.6-plus",
-                "deepseek/deepseek-v3.2"
-            ],
-            "deepseek": [
-                "deepseek-v4-pro",
-                "deepseek-v4-flash",
-                "deepseek-chat"
-            ],
-            "openai": ["gpt-4o", "gpt-4o-mini", "gpt-4.5-preview"],
-            "anthropic": ["claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-opus-20240229"],
-            "local": ["local-model"]
-        }
+        models = SHARED_MODELS
         
         self.window.settings_tab.ext_model_name.blockSignals(True)
         self.window.settings_tab.ext_model_name.clear()

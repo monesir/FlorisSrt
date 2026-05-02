@@ -553,7 +553,7 @@ class UsageTab(QWidget):
         left_lay.addWidget(QLabel("Provider:"))
         self.provider_input = QComboBox()
         self.provider_input.setEditable(True)
-        self.provider_input.addItems(["openai", "deepseek", "anthropic", "google"])
+        self.provider_input.addItems(["openai", "anthropic", "deepseek", "openrouter", "gemini", "local"])
         left_lay.addWidget(self.provider_input)
         
         left_lay.addWidget(QLabel("Model:"))
