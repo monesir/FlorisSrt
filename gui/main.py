@@ -451,6 +451,8 @@ class AppController:
             table.setItem(row, 5, QTableWidgetItem(f"${cost:.4f}"))
             table.setItem(row, 6, QTableWidgetItem("Yes" if est else "No"))
             
+        table.resizeColumnsToContents()
+            
         # Update Run Stats
         run_tokens, run_cost = self.usage_tracker.get_current_run_stats()
             
