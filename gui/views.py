@@ -634,6 +634,13 @@ class UsageTab(QWidget):
         self.table = QTableWidget(0, 7)
         self.table.setHorizontalHeaderLabels(["Project", "Episode", "Model", "In", "Out", "Cost", "Est."])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Interactive)
+        self.table.setColumnWidth(0, 100) # Project
+        self.table.setColumnWidth(1, 80)  # Episode
+        self.table.setColumnWidth(2, 250) # Model
+        self.table.setColumnWidth(3, 60)  # In
+        self.table.setColumnWidth(4, 60)  # Out
+        self.table.setColumnWidth(5, 80)  # Cost
+        self.table.setColumnWidth(6, 60)  # Est.
         self.table.horizontalHeader().setStretchLastSection(True)
         self.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)

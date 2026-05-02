@@ -84,12 +84,18 @@ class UsageTracker:
             return []
             
     def get_current_run_stats(self) -> tuple:
-        """Returns (tokens, cost) for the current run_id"""
+        """Returns (tokens, cost) for the latest run_id in the ledger/buffer"""
         tokens = 0
         cost = 0.0
-        # include flushed entries
-        for entry in self.get_ledger(limit=None):
-            if entry.get("run_id") == self.run_id:
+        
+        all_entries = self.get_ledger(limit=None) + self.buffer
+        if not all_entries:
+            return tokens, cost
+            
+        latest_run_id = all_entries[-1].get("run_id")
+        
+        for entry in all_entries:
+            if entry.get("run_id") == latest_run_id:
                 p_tok = entry.get("prompt_tokens", 0)
                 c_tok = entry.get("completion_tokens", 0)
                 prov = entry.get("provider", "")
@@ -97,15 +103,6 @@ class UsageTracker:
                 tokens += (p_tok + c_tok)
                 cost += self.calculate_cost(prov, model, p_tok, c_tok)
                 
-        # include buffered entries
-        for entry in self.buffer:
-            p_tok = entry.get("prompt_tokens", 0)
-            c_tok = entry.get("completion_tokens", 0)
-            prov = entry.get("provider", "")
-            model = entry.get("model", "")
-            tokens += (p_tok + c_tok)
-            cost += self.calculate_cost(prov, model, p_tok, c_tok)
-            
         return tokens, cost
 
     def get_pricing(self) -> dict:
