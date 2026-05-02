@@ -744,8 +744,7 @@ class AppController:
 
     def _browse_file(self):
         path, _ = QFileDialog.getOpenFileName(self.window, "Select Subtitle", "", "Subtitles (*.srt *.ass)")
-        if path:
-            self.batch_project_name = None
+        if os.path.isfile(path):
             self.batch_queue = [path]
             self.total_batch = 1
             self.window.run_tab.lbl_batch.setText("Batch Queue: 1/1")
@@ -755,7 +754,13 @@ class AppController:
         folder = QFileDialog.getExistingDirectory(self.window, "Select Folder")
         if not folder: return
         
-        self.batch_project_name = os.path.basename(folder)
+        default_proj = os.path.basename(folder)
+        cb = self.window.run_tab.project_cb
+        if not cb.currentText().strip():
+            cb.setCurrentText(default_proj)
+            
+        target_proj = cb.currentText().strip() or default_proj
+        
         target_ext = self.window.run_tab.batch_format_cb.currentText()
         files = []
         skipped_count = 0
@@ -765,7 +770,7 @@ class AppController:
                     file_path = os.path.join(root, f)
                     
                     # Check if already translated
-                    project, episode = self.project_service.resolve_project(file_path, force_project_name=self.batch_project_name)
+                    project, episode = self.project_service.resolve_project(file_path, force_project_name=target_proj)
                     base_name = os.path.splitext(f)[0]
                     ext = os.path.splitext(f)[1]
                     output_path = os.path.join(self.project_service.base_dir, project, "episodes", episode, f"{base_name}_floris{ext}")
@@ -805,7 +810,9 @@ class AppController:
 
     def _on_file_selected(self, path):
         if not path or not os.path.exists(path): return
-        project, episode = self.project_service.resolve_project(path, force_project_name=getattr(self, 'batch_project_name', None))
+        
+        target_proj = self.window.run_tab.project_cb.currentText().strip() or None
+        project, episode = self.project_service.resolve_project(path, force_project_name=target_proj)
         
         if not self.project_service.project_exists(project):
             self.project_service.bootstrap_project(project, path)
@@ -1229,7 +1236,7 @@ class AppController:
             api_key=api_key,
             model_name=model_name,
             resume=False,
-            project_name=getattr(self, 'batch_project_name', None) or self.window.run_tab.project_cb.currentText().strip() or None,
+            project_name=self.window.run_tab.project_cb.currentText().strip() or None,
             log_language=log_lang,
             translation_style=trans_style,
             force_single_line=force_single,
@@ -1265,7 +1272,7 @@ class AppController:
             api_key=api_key,
             model_name=model_name,
             resume=True,
-            project_name=getattr(self, 'batch_project_name', None) or self.window.run_tab.project_cb.currentText().strip() or None,
+            project_name=self.window.run_tab.project_cb.currentText().strip() or None,
             log_language=log_lang,
             translation_style=trans_style,
             force_single_line=force_single,
