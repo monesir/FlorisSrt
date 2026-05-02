@@ -350,6 +350,8 @@ class ReviewTab(QWidget):
         top_lay.addWidget(self.filter_cb)
         layout.addLayout(top_lay)
         
+        self.splitter = QSplitter(Qt.Vertical)
+        
         self.table = QTableWidget(0, 5)
         self.table.setHorizontalHeaderLabels(["Chunk", "ID", "English Text", "Arabic Translation", "Status"])
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
@@ -358,17 +360,26 @@ class ReviewTab(QWidget):
         self.table.horizontalHeader().setSectionResizeMode(4, QHeaderView.ResizeToContents)
         self.table.setSelectionBehavior(QAbstractItemView.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SingleSelection)
-        layout.addWidget(self.table)
+        self.splitter.addWidget(self.table)
         
         # Dedicated Edit Box
-        edit_lay = QVBoxLayout()
-        edit_lay.addWidget(QLabel("Edit Translation:"))
+        edit_container = QWidget()
+        edit_lay = QVBoxLayout(edit_container)
+        edit_lay.setContentsMargins(0, 10, 0, 0)
+        
+        lbl = QLabel("Edit Translation:")
+        lbl.setStyleSheet("font-weight: bold; color: #a9b7c6;")
+        edit_lay.addWidget(lbl)
+        
         self.edit_box = QTextEdit()
-        self.edit_box.setMaximumHeight(80)
-        # Set RTL direction for the edit box
         self.edit_box.setLayoutDirection(Qt.RightToLeft)
         edit_lay.addWidget(self.edit_box)
-        layout.addLayout(edit_lay)
+        
+        self.splitter.addWidget(edit_container)
+        self.splitter.setSizes([400, 100])
+        self.splitter.setStyleSheet("QSplitter::handle { background-color: #3f3f46; height: 2px; margin: 4px 0px; }")
+        
+        layout.addWidget(self.splitter, 1)
         
         bot_lay = QHBoxLayout()
         self.rebuild_btn = QPushButton("Save Edits & Rebuild Subtitles")
