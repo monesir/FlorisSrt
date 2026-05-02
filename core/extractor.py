@@ -221,7 +221,9 @@ If none are found, return empty arrays."""
                 if t_name and t_name not in all_terms:
                     all_terms[t_name] = term
                     
-        self.usage_tracker.flush()
+            # Flush tokens safely after each chunk
+            self.usage_tracker.flush()
+            
         return {
             "characters": list(all_chars.values()),
             "terms": list(all_terms.values()),

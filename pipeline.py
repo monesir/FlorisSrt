@@ -306,6 +306,9 @@ def main():
             
         state_manager.save_state(state)
         all_final_segments.extend(result['segments'])
+        
+        # Flush tokens safely after each chunk
+        engine.usage_tracker.flush()
 
     # 6. Rebuilding
     if len(all_final_segments) == len(raw_segments) or (args.max_chunks and len(all_final_segments) > 0):
