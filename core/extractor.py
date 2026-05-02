@@ -101,15 +101,30 @@ If none are found, return empty arrays."""
                     content = response.content[0].text
                     usage_data = {"prompt_tokens": response.usage.input_tokens, "completion_tokens": response.usage.output_tokens, "total_tokens": response.usage.input_tokens + response.usage.output_tokens} if hasattr(response, 'usage') else None
                 else:
-                    response = self.client.chat.completions.create(
-                        model=self.model,
-                        messages=[
+                    kwargs = {
+                        "model": self.model,
+                        "messages": [
                             {"role": "system", "content": system_prompt},
                             {"role": "user", "content": user_prompt}
                         ],
-                        response_format={"type": "json_object"},
-                        timeout=self.timeout
-                    )
+                        "timeout": self.timeout
+                    }
+                    
+                    unsupported = ["reasoner", "o1", "o3", "claude"]
+                    is_json_supported = True
+                    
+                    if self.provider in ["openrouter", "local"]:
+                        is_json_supported = False
+                        
+                    for u in unsupported:
+                        if u in self.model.lower():
+                            is_json_supported = False
+                            break
+                            
+                    if is_json_supported:
+                        kwargs["response_format"] = {"type": "json_object"}
+                        
+                    response = self.client.chat.completions.create(**kwargs)
                     content = response.choices[0].message.content
                     usage_data = {"prompt_tokens": response.usage.prompt_tokens, "completion_tokens": response.usage.completion_tokens, "total_tokens": response.usage.total_tokens, "cached_tokens": 0} if hasattr(response, 'usage') and response.usage else None
                     if usage_data:

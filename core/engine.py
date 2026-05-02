@@ -69,15 +69,31 @@ class TranslationEngine:
         
     def call_llm(self, system_prompt, user_prompt):
         """الاتصال المباشر بالـ API مع سقف للـ Timeout"""
-        response = self.client.chat.completions.create(
-            model=self.model,
-            messages=[
+        kwargs = {
+            "model": self.model,
+            "messages": [
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            response_format={"type": "json_object"},
-            timeout=self.timeout
-        )
+            "timeout": self.timeout
+        }
+        
+        # استثناء الموديلات التي لا تدعم JSON mode أو تسبب انهياراً
+        unsupported = ["reasoner", "o1", "o3", "claude"]
+        is_json_supported = True
+        
+        if self.provider in ["openrouter", "local"]:
+            is_json_supported = False
+            
+        for u in unsupported:
+            if u in self.model.lower():
+                is_json_supported = False
+                break
+                
+        if is_json_supported:
+            kwargs["response_format"] = {"type": "json_object"}
+            
+        response = self.client.chat.completions.create(**kwargs)
         usage = response.usage
         usage_dict = {
             "prompt_tokens": usage.prompt_tokens if usage and hasattr(usage, 'prompt_tokens') else 0,
