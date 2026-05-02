@@ -41,6 +41,7 @@ class TranslationEngine:
         self.infinite_retries = infinite_retries
         self.project_name = project_name
         self.episode_name = episode_name
+        self.provider = provider
         self.usage_tracker = UsageTracker()
         
         if provider == "deepseek" and not base_url:
