@@ -3,6 +3,7 @@ import json
 import re
 from datetime import datetime
 from openai import OpenAI
+from core.usage_tracker import UsageTracker
 
 log_lang = "Bilingual"
 
