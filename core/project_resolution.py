@@ -13,7 +13,7 @@ class ProjectResolution:
     def sanitize_name(self, name):
         """تطبيع اسم المشروع: أحرف صغيرة، واستبدال المسافات بـ hyphens"""
         name = name.lower().strip()
-        name = re.sub(r'[^a-z0-9\s-]', '', name)
+        name = re.sub(r'[^\w\s-]', '', name)
         name = re.sub(r'\s+', '-', name)
         return name
 
@@ -69,8 +69,8 @@ class ProjectResolution:
                 if parent_dir and parent_dir.lower() not in ['downloads', 'desktop', 'documents']:
                     project_name = self.sanitize_name(parent_dir)
                     
-            if not project_name or project_name == "-":
-                project_name = "unknown-project"
+        if not project_name or project_name == "-":
+            project_name = "unknown-project"
 
         project_path = os.path.join(self.projects_dir, project_name)
         data_path = os.path.join(project_path, 'data')

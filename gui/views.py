@@ -590,12 +590,14 @@ class UsageTab(QWidget):
         filter_lay.addWidget(QLabel("Project:"))
         self.filter_project = QComboBox()
         self.filter_project.setEditable(True)
+        self.filter_project.setMinimumWidth(150)
         self.filter_project.addItem("All")
         filter_lay.addWidget(self.filter_project)
         
         filter_lay.addWidget(QLabel("Model:"))
         self.filter_model = QComboBox()
         self.filter_model.setEditable(True)
+        self.filter_model.setMinimumWidth(200)
         self.filter_model.addItem("All")
         filter_lay.addWidget(self.filter_model)
         
