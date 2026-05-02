@@ -100,7 +100,7 @@ class ExtractorWorker(QThread):
     error_occurred = Signal(str)
     log_updated = Signal(str)
 
-    def __init__(self, cfg, file_paths, source_lang, work_context="", mode="Balanced", translate_result=True):
+    def __init__(self, cfg, file_paths, source_lang, work_context="", mode="Balanced", translate_result=True, project_name="unknown"):
         super().__init__()
         self.cfg = cfg
         self.file_paths = file_paths
@@ -108,6 +108,7 @@ class ExtractorWorker(QThread):
         self.work_context = work_context
         self.mode = mode
         self.translate_result = translate_result
+        self.project_name = project_name
 
     def run(self):
         try:
@@ -123,7 +124,8 @@ class ExtractorWorker(QThread):
                 provider=provider,
                 api_key=api_key,
                 model=model,
-                infinite_retries=infinite
+                infinite_retries=infinite,
+                project_name=self.project_name
             )
             
             merged_result = {"characters": [], "terms": [], "total_tokens": 0}
@@ -1397,7 +1399,13 @@ class AppController:
         mode = self.window.analyze_tab.mode_cb.currentText()
         translate_result = self.window.analyze_tab.chk_translate.isChecked()
         
-        self.ext_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context, mode, translate_result)
+        project_name = "unknown"
+        if project:
+            project_name = project
+        elif project_path:
+            project_name = os.path.basename(project_path)
+            
+        self.ext_worker = ExtractorWorker(self.config_cache, file_paths, lang, work_context, mode, translate_result, project_name)
         self.ext_worker.progress_updated.connect(lambda v, m: self.window.analyze_tab.progress_bar.setValue(v))
         self.ext_worker.log_updated.connect(lambda msg: self.window.analyze_tab.log_console.append(msg))
         self.ext_worker.finished_extraction.connect(self._on_analyze_finished)

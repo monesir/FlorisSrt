@@ -3,14 +3,18 @@ import time
 from openai import OpenAI
 import os
 
+from core.usage_tracker import UsageTracker
+
 class ExtractorEngine:
-    def __init__(self, provider, api_key, model, timeout=30, max_retries=3, infinite_retries=False):
+    def __init__(self, provider, api_key, model, timeout=30, max_retries=3, infinite_retries=False, project_name="unknown"):
         self.provider = provider
         self.api_key = api_key
         self.model = model
         self.timeout = timeout
         self.max_retries = max_retries
         self.infinite_retries = infinite_retries
+        self.project_name = project_name
+        self.usage_tracker = UsageTracker()
         
         # إعداد الـ Client بناءً على المزود
         if provider == "openai":
@@ -173,10 +177,36 @@ If none are found, return empty arrays."""
                 
             if "usage" in result and result["usage"]:
                 u = result["usage"]
+                p_tok = u.get('prompt_tokens', 0)
+                c_tok = u.get('completion_tokens', 0)
                 total_tokens_used += u.get('total_tokens', 0)
                 if log_callback: 
                     cache_str = f" (Cached: {u.get('cached_tokens', 0)})" if u.get('cached_tokens', 0) > 0 else ""
-                    log_callback(f"Tokens: {u.get('prompt_tokens')} IN{cache_str} | {u.get('completion_tokens')} OUT | {u.get('total_tokens')} TOTAL")
+                    log_callback(f"Tokens: {p_tok} IN{cache_str} | {c_tok} OUT | {u.get('total_tokens', 0)} TOTAL")
+                
+                self.usage_tracker.record_usage(
+                    project=self.project_name,
+                    episode=os.path.basename(filepath),
+                    provider=self.provider,
+                    model=self.model,
+                    prompt_tokens=p_tok,
+                    completion_tokens=c_tok,
+                    estimated=False
+                )
+            else:
+                # Fallback estimation
+                p_tok = len(text_block) // 4
+                c_tok = 50 # minimal completion for extraction
+                total_tokens_used += (p_tok + c_tok)
+                self.usage_tracker.record_usage(
+                    project=self.project_name,
+                    episode=os.path.basename(filepath),
+                    provider=self.provider,
+                    model=self.model,
+                    prompt_tokens=p_tok,
+                    completion_tokens=c_tok,
+                    estimated=True
+                )
             
             # Merge Results
             chars_list = result.get('characters') or []
@@ -191,6 +221,7 @@ If none are found, return empty arrays."""
                 if t_name and t_name not in all_terms:
                     all_terms[t_name] = term
                     
+        self.usage_tracker.flush()
         return {
             "characters": list(all_chars.values()),
             "terms": list(all_terms.values()),
