@@ -384,6 +384,8 @@ class AppController:
         
         if episodes:
             self._load_review_data()
+        else:
+            self._populate_review_table([])
 
     # --- Usage Tab Logic ---
     def _refresh_usage_tab(self):
@@ -582,7 +584,9 @@ class AppController:
     def _load_review_data(self):
         project = self.window.review_tab.project_cb.currentText()
         episode = self.window.review_tab.episode_cb.currentText()
-        if not project or not episode: return
+        if not project or not episode:
+            self._populate_review_table([])
+            return
         ep_dir = os.path.join(self.project_service.base_dir, project, 'episodes', episode)
         
         self.current_review_state_manager = StateManager(ep_dir)
