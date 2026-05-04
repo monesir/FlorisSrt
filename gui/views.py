@@ -34,6 +34,10 @@ class RunTab(QWidget):
         self.project_cb = QComboBox()
         self.project_cb.setEditable(True)
         project_label_layout.addWidget(self.project_cb)
+        self.btn_new_project = QPushButton("+ New")
+        self.btn_new_project.setFixedWidth(60)
+        self.btn_new_project.setStyleSheet("font-weight: bold;")
+        project_label_layout.addWidget(self.btn_new_project)
         
         self.lbl_episode = QLabel("Episode: None")
         
@@ -264,6 +268,10 @@ class DataEditorTab(QWidget):
         self.project_cb.setEditable(True)
         self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         proj_lay.addWidget(self.project_cb)
+        self.btn_new_project = QPushButton("+ New")
+        self.btn_new_project.setFixedWidth(60)
+        self.btn_new_project.setStyleSheet("font-weight: bold;")
+        proj_lay.addWidget(self.btn_new_project)
         layout.addLayout(proj_lay)
         
         self.tabs = QTabWidget()
@@ -334,6 +342,7 @@ class ReviewTab(QWidget):
         top_lay = QHBoxLayout()
         top_lay.addWidget(QLabel("Project:"))
         self.project_cb = QComboBox()
+        self.project_cb.setEditable(True)
         self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         top_lay.addWidget(self.project_cb)
         
@@ -427,6 +436,10 @@ class AnalyzeTab(QWidget):
         self.project_cb.setEditable(True)
         self.project_cb.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         act_lay.addWidget(self.project_cb)
+        self.btn_new_project = QPushButton("+ New")
+        self.btn_new_project.setFixedWidth(60)
+        self.btn_new_project.setStyleSheet("font-weight: bold;")
+        act_lay.addWidget(self.btn_new_project)
         
         self.btn_start = QPushButton("Start Auto-Extraction")
         self.btn_start.setStyleSheet("font-weight: bold; padding: 5px;")
@@ -659,6 +672,132 @@ class UsageTab(QWidget):
         
         layout.addWidget(right_panel, 3)
 
+class WikiScraperTab(QWidget):
+    def __init__(self):
+        super().__init__()
+        layout = QVBoxLayout(self)
+        
+        # Source selection
+        source_layout = QHBoxLayout()
+        source_layout.addWidget(QLabel("<b>Source:</b>"))
+        self.source_cb = QComboBox()
+        self.source_cb.addItems(["Anilist", "MAL (MyAnimeList)", "Fandom (Characters)", "Fandom (Wiki Data)"])
+        source_layout.addWidget(self.source_cb)
+        source_layout.addSpacing(20)
+        source_layout.addWidget(QLabel("<b>Target Project:</b>"))
+        self.project_cb = QComboBox()
+        self.project_cb.setEditable(True)
+        self.project_cb.setMinimumWidth(160)
+        self.project_cb.setPlaceholderText("Select project...")
+        source_layout.addWidget(self.project_cb)
+        self.btn_new_project = QPushButton("+ New")
+        self.btn_new_project.setFixedWidth(60)
+        self.btn_new_project.setStyleSheet("font-weight: bold;")
+        source_layout.addWidget(self.btn_new_project)
+        layout.addLayout(source_layout)
+        
+        # Search input
+        search_layout = QHBoxLayout()
+        search_layout.addWidget(QLabel("Search:"))
+        self.search_input = QLineEdit()
+        self.search_input.setPlaceholderText("Anime name (e.g. Naruto, Death Note...)")
+        search_layout.addWidget(self.search_input)
+        self.search_btn = QPushButton("🔍 Search && Fetch")
+        self.search_btn.setStyleSheet("padding: 6px 16px; font-weight: bold;")
+        search_layout.addWidget(self.search_btn)
+        layout.addLayout(search_layout)
+        
+        # Fandom URL input (shown only for Fandom sources)
+        fandom_layout = QHBoxLayout()
+        fandom_layout.addWidget(QLabel("Fandom URL:"))
+        self.fandom_url_input = QLineEdit()
+        self.fandom_url_input.setPlaceholderText("https://naruto.fandom.com")
+        fandom_layout.addWidget(self.fandom_url_input)
+        self.fandom_url_widget = QWidget()
+        self.fandom_url_widget.setLayout(fandom_layout)
+        self.fandom_url_widget.hide()
+        layout.addWidget(self.fandom_url_widget)
+        
+        # Fetch options for Fandom Wiki Data
+        options_layout = QHBoxLayout()
+        self.chk_abilities = QCheckBox("Abilities")
+        self.chk_abilities.setChecked(True)
+        self.chk_locations = QCheckBox("Locations")
+        self.chk_locations.setChecked(True)
+        self.chk_lore = QCheckBox("Lore / Organizations")
+        self.chk_lore.setChecked(True)
+        options_layout.addWidget(QLabel("Fetch:"))
+        options_layout.addWidget(self.chk_abilities)
+        options_layout.addWidget(self.chk_locations)
+        options_layout.addWidget(self.chk_lore)
+        options_layout.addStretch()
+        self.options_widget = QWidget()
+        self.options_widget.setLayout(options_layout)
+        self.options_widget.hide()
+        layout.addWidget(self.options_widget)
+        
+        # Progress
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        layout.addWidget(self.progress_bar)
+        
+        self.lbl_status = QLabel("Status: Ready")
+        layout.addWidget(self.lbl_status)
+        
+        # Results table
+        self.results_table = QTableWidget()
+        self.results_table.setColumnCount(4)
+        self.results_table.setHorizontalHeaderLabels(["Name", "Gender", "Type", "Source"])
+        self.results_table.horizontalHeader().setSectionResizeMode(0, QHeaderView.Stretch)
+        self.results_table.setColumnWidth(1, 100)
+        self.results_table.setColumnWidth(2, 120)
+        self.results_table.setColumnWidth(3, 100)
+        self.results_table.setSelectionBehavior(QAbstractItemView.SelectRows)
+        self.results_table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        layout.addWidget(self.results_table)
+        
+        # Action buttons
+        actions_layout = QHBoxLayout()
+        self.lbl_result_count = QLabel("")
+        actions_layout.addWidget(self.lbl_result_count)
+        actions_layout.addStretch()
+        
+        self.btn_import_chars = QPushButton("📥 Import Characters to Project")
+        self.btn_import_chars.setEnabled(False)
+        self.btn_import_chars.setStyleSheet("padding: 6px 14px;")
+        actions_layout.addWidget(self.btn_import_chars)
+        
+        self.btn_import_glossary = QPushButton("📥 Import to Glossary")
+        self.btn_import_glossary.setEnabled(False)
+        self.btn_import_glossary.setStyleSheet("padding: 6px 14px;")
+        actions_layout.addWidget(self.btn_import_glossary)
+        
+        self.btn_export_csv = QPushButton("📄 Export CSV")
+        self.btn_export_csv.setEnabled(False)
+        actions_layout.addWidget(self.btn_export_csv)
+        
+        layout.addLayout(actions_layout)
+        
+        # Log console
+        self.log_console = QPlainTextEdit()
+        self.log_console.setReadOnly(True)
+        self.log_console.setMaximumHeight(120)
+        self.log_console.setStyleSheet("font-family: Consolas, monospace; font-size: 11px; background: #1e1e2e; color: #cdd6f4;")
+        layout.addWidget(self.log_console)
+        
+        # Wire source change to toggle visibility
+        self.source_cb.currentTextChanged.connect(self._on_source_changed)
+
+    def _on_source_changed(self, text):
+        is_fandom = "Fandom" in text
+        self.fandom_url_widget.setVisible(is_fandom)
+        self.options_widget.setVisible("Wiki Data" in text)
+        if is_fandom:
+            self.search_input.setPlaceholderText("(Optional) Used as slug for CSV export")
+        else:
+            self.search_input.setPlaceholderText("Anime name (e.g. Naruto, Death Note...)")
+
+
 class MainWindow(QMainWindow):
     def __init__(self):
         super().__init__()
@@ -684,6 +823,7 @@ class MainWindow(QMainWindow):
         self.data_editor_tab = DataEditorTab()
         self.review_tab = ReviewTab()
         self.usage_tab = UsageTab()
+        self.wiki_scraper_tab = WikiScraperTab()
         self.settings_tab = SettingsTab()
         
         self.tabs.addTab(self.run_tab, "Run")
@@ -691,6 +831,7 @@ class MainWindow(QMainWindow):
         self.tabs.addTab(self.data_editor_tab, "Data Editor")
         self.tabs.addTab(self.review_tab, "Review & Post-Edit")
         self.tabs.addTab(self.usage_tab, "Cost & Usage")
+        self.tabs.addTab(self.wiki_scraper_tab, "Wiki Scraper")
         self.tabs.addTab(self.settings_tab, "Settings")
         
         self.status_bar = QStatusBar()

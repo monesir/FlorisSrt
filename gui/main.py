@@ -153,6 +153,60 @@ class ExtractorWorker(QThread):
         except Exception as e:
             self.error_occurred.emit(str(e))
 
+
+class WikiScraperWorker(QThread):
+    progress_updated = Signal(int, int)
+    finished = Signal(list)
+    error_occurred = Signal(str)
+    log_updated = Signal(str)
+
+    def __init__(self, source, search_text, fandom_url="", fetch_abilities=True, fetch_locations=True, fetch_lore=True):
+        super().__init__()
+        self.source = source
+        self.search_text = search_text
+        self.fandom_url = fandom_url
+        self.fetch_abilities = fetch_abilities
+        self.fetch_locations = fetch_locations
+        self.fetch_lore = fetch_lore
+
+    def run(self):
+        try:
+            from core.wiki_scraper import AnilistScraper, FandomCharacterScraper, FandomWikiDataScraper, MALScraper
+
+            def on_progress(cur, total):
+                if total > 0:
+                    self.progress_updated.emit(cur, total)
+
+            def on_log(msg):
+                self.log_updated.emit(msg)
+
+            if self.source == "Anilist":
+                scraper = AnilistScraper(on_progress=on_progress, on_log=on_log)
+                title, results = scraper.run(self.search_text)
+                self.finished.emit(results or [])
+
+            elif "MAL" in self.source:
+                scraper = MALScraper(on_progress=on_progress, on_log=on_log)
+                title, results = scraper.run(self.search_text)
+                self.finished.emit(results or [])
+
+            elif "Characters" in self.source:
+                scraper = FandomCharacterScraper(on_progress=on_progress, on_log=on_log)
+                results = scraper.run(self.fandom_url)
+                self.finished.emit(results or [])
+
+            elif "Wiki Data" in self.source:
+                scraper = FandomWikiDataScraper(on_progress=on_progress, on_log=on_log)
+                results = scraper.run(self.fandom_url, self.fetch_abilities, self.fetch_locations, self.fetch_lore)
+                self.finished.emit(results or [])
+
+            else:
+                self.error_occurred.emit(f"Unknown source: {self.source}")
+
+        except Exception as e:
+            self.error_occurred.emit(str(e))
+
+
 from core.usage_tracker import UsageTracker
 
 class AppController:
@@ -196,6 +250,7 @@ class AppController:
         self.window.run_tab.prompt_mode_cb.currentTextChanged.connect(self._on_prompt_mode_changed)
         self.window.run_tab.save_custom_prompts_btn.clicked.connect(self._save_config)
         self.window.run_tab.project_cb.currentTextChanged.connect(self._on_run_project_changed)
+        self.window.run_tab.btn_new_project.clicked.connect(lambda: self._create_project_inline(self.window.run_tab.project_cb))
         
         self.window.action_quick_start.triggered.connect(self._show_quick_start)
         
@@ -212,6 +267,14 @@ class AppController:
         
         self.runner.log_ready.connect(self._append_log)
         self.runner.state_changed.connect(self._on_runner_state_changed)
+        
+        # Wiki Scraper Tab
+        self.window.wiki_scraper_tab.search_btn.clicked.connect(self._wiki_start_fetch)
+        self.window.wiki_scraper_tab.btn_import_chars.clicked.connect(self._wiki_import_characters)
+        self.window.wiki_scraper_tab.btn_import_glossary.clicked.connect(self._wiki_import_glossary)
+        self.window.wiki_scraper_tab.btn_export_csv.clicked.connect(self._wiki_export_csv)
+        self.window.wiki_scraper_tab.btn_new_project.clicked.connect(self._wiki_create_project)
+        self.wiki_results = []
         
         # Initialize usage models
         self._update_usage_model_dropdown(self.window.usage_tab.provider_input.currentText())
@@ -243,6 +306,7 @@ class AppController:
         self.window.data_editor_tab.char_add.clicked.connect(self._add_character_row)
         self.window.data_editor_tab.char_del.clicked.connect(lambda: self._delete_table_row(self.window.data_editor_tab.char_table))
         self.window.data_editor_tab.char_save.clicked.connect(self._save_characters)
+        self.window.data_editor_tab.btn_new_project.clicked.connect(lambda: self._create_project_inline(self.window.data_editor_tab.project_cb))
 
         self.window.data_editor_tab.glos_add.clicked.connect(self._add_glossary_row)
         self.window.data_editor_tab.glos_del.clicked.connect(lambda: self._delete_table_row(self.window.data_editor_tab.glos_table))
@@ -266,6 +330,7 @@ class AppController:
         self.window.analyze_tab.btn_start.clicked.connect(self._on_analyze_start)
         self.window.analyze_tab.btn_save.clicked.connect(self._on_analyze_save)
         self.window.analyze_tab.btn_export.clicked.connect(self._on_analyze_export)
+        self.window.analyze_tab.btn_new_project.clicked.connect(lambda: self._create_project_inline(self.window.analyze_tab.project_cb))
         
         self.window.tabs.currentChanged.connect(self._on_tab_changed)
 
@@ -310,6 +375,18 @@ class AppController:
             self._refresh_review_projects()
         elif current_widget == self.window.usage_tab:
             self._refresh_usage_tab()
+        elif current_widget == self.window.wiki_scraper_tab:
+            cb = self.window.wiki_scraper_tab.project_cb
+            old = cb.currentText()
+            cb.blockSignals(True)
+            cb.clear()
+            tree = self.project_service.get_projects_tree()
+            cb.addItems(sorted(tree.keys()))
+            if old and cb.findText(old) >= 0:
+                cb.setCurrentText(old)
+            elif self.current_project and cb.findText(self.current_project) >= 0:
+                cb.setCurrentText(self.current_project)
+            cb.blockSignals(False)
 
     # --- Pre-Analyze Dropdown Refresh ---
     def _refresh_run_projects(self):
@@ -904,15 +981,18 @@ class AppController:
         for term, data in term_data.items():
             self._add_term_memory_row(term, data.get("translation", ""), data.get("count", 0), data.get("locked", False))
 
-    def _add_character_row(self, name="", arabic_name="", gender="unknown"):
+    def _add_character_row(self, name="", arabic_name="", gender="Unknown"):
         table = self.window.data_editor_tab.char_table
         row = table.rowCount()
         table.insertRow(row)
         table.setItem(row, 0, QTableWidgetItem(name))
         table.setItem(row, 1, QTableWidgetItem(arabic_name))
         cb = QComboBox()
-        cb.addItems(["male", "female", "unknown"])
-        cb.setCurrentText(gender)
+        cb.addItems(["Male", "Female", "Unknown"])
+        # Normalize gender to match combobox values
+        gender_map = {"male": "Male", "female": "Female", "unknown": "Unknown",
+                      "Male": "Male", "Female": "Female", "Unknown": "Unknown"}
+        cb.setCurrentText(gender_map.get(gender, "Unknown"))
         table.setCellWidget(row, 2, cb)
 
     def _add_glossary_row(self, term="", trans="", category="", match_type="hard"):
@@ -1553,6 +1633,180 @@ class AppController:
             except Exception as e:
                 QMessageBox.critical(self.window, "Error", f"Failed to export: {e}")
 
+    # ─────────── Wiki Scraper Tab ───────────
+    
+    def _create_project_inline(self, target_cb=None):
+        """Create a new project from any tab's '+ New' button."""
+        from PySide6.QtWidgets import QInputDialog
+        name, ok = QInputDialog.getText(self.window, "New Project", "Project name:")
+        if not ok or not name.strip():
+            return
+        name = name.strip().lower().replace(" ", "_")
+        if self.project_service.project_exists(name):
+            QMessageBox.information(self.window, "Exists", f"Project '{name}' already exists.")
+        else:
+            self.project_service.bootstrap_project(name, "")
+            QMessageBox.information(self.window, "Created", f"Project '{name}' created.")
+        # Refresh the target dropdown and select the new project
+        if target_cb:
+            target_cb.blockSignals(True)
+            old_editable = target_cb.isEditable()
+            tree = self.project_service.get_projects_tree()
+            target_cb.clear()
+            if old_editable:
+                target_cb.addItem("")
+            target_cb.addItems(sorted(tree.keys()))
+            target_cb.setCurrentText(name)
+            target_cb.blockSignals(False)
+
+    def _wiki_create_project(self):
+        self._create_project_inline(self.window.wiki_scraper_tab.project_cb)
+
+    def _wiki_start_fetch(self):
+        tab = self.window.wiki_scraper_tab
+        source = tab.source_cb.currentText()
+        search_text = tab.search_input.text().strip()
+        fandom_url = tab.fandom_url_input.text().strip()
+        
+        if "Fandom" in source and not fandom_url:
+            QMessageBox.warning(self.window, "Missing URL", "Please enter a Fandom URL (e.g. https://naruto.fandom.com)")
+            return
+        if "Fandom" not in source and not search_text:
+            QMessageBox.warning(self.window, "Missing Input", "Please enter an anime name to search.")
+            return
+        
+        tab.search_btn.setEnabled(False)
+        tab.lbl_status.setText("Status: Fetching...")
+        tab.progress_bar.setValue(0)
+        tab.log_console.clear()
+        tab.results_table.setRowCount(0)
+        self.wiki_results = []
+        
+        self.wiki_worker = WikiScraperWorker(
+            source=source, search_text=search_text, fandom_url=fandom_url,
+            fetch_abilities=tab.chk_abilities.isChecked(),
+            fetch_locations=tab.chk_locations.isChecked(),
+            fetch_lore=tab.chk_lore.isChecked()
+        )
+        self.wiki_worker.progress_updated.connect(self._wiki_on_progress)
+        self.wiki_worker.log_updated.connect(self._wiki_on_log)
+        self.wiki_worker.finished.connect(self._wiki_on_finished)
+        self.wiki_worker.error_occurred.connect(self._wiki_on_error)
+        self.wiki_worker.start()
+    
+    def _wiki_on_progress(self, cur, total):
+        if total > 0:
+            self.window.wiki_scraper_tab.progress_bar.setValue(int(cur / total * 100))
+    
+    def _wiki_on_log(self, msg):
+        self.window.wiki_scraper_tab.log_console.appendPlainText(msg)
+    
+    def _wiki_on_finished(self, results):
+        tab = self.window.wiki_scraper_tab
+        tab.search_btn.setEnabled(True)
+        tab.progress_bar.setValue(100)
+        self.wiki_results = results
+        
+        tab.results_table.setRowCount(len(results))
+        for i, item in enumerate(results):
+            tab.results_table.setItem(i, 0, QTableWidgetItem(item.get("name", "")))
+            tab.results_table.setItem(i, 1, QTableWidgetItem(item.get("gender", "")))
+            tab.results_table.setItem(i, 2, QTableWidgetItem(item.get("type", "")))
+            tab.results_table.setItem(i, 3, QTableWidgetItem(item.get("source", "")))
+        
+        has_chars = any(r["type"] == "character" for r in results)
+        has_glossary = any(r["type"] in ("ability", "location", "lore") for r in results)
+        tab.btn_import_chars.setEnabled(has_chars)
+        tab.btn_import_glossary.setEnabled(has_glossary)
+        tab.btn_export_csv.setEnabled(bool(results))
+        tab.lbl_result_count.setText(f"Results: {len(results)}")
+        tab.lbl_status.setText(f"Status: Done — {len(results)} items fetched")
+    
+    def _wiki_on_error(self, err):
+        tab = self.window.wiki_scraper_tab
+        tab.search_btn.setEnabled(True)
+        tab.lbl_status.setText(f"Status: Error — {err}")
+        tab.log_console.appendPlainText(f"❌ ERROR: {err}")
+        QMessageBox.critical(self.window, "Scraper Error", str(err))
+    
+    def _wiki_get_target_project(self):
+        """Get the target project from the wiki tab's project dropdown."""
+        proj = self.window.wiki_scraper_tab.project_cb.currentText()
+        if not proj:
+            QMessageBox.warning(self.window, "No Project", "Please select a target project from the dropdown.")
+            return None
+        return proj
+
+    def _wiki_import_characters(self):
+        project = self._wiki_get_target_project()
+        if not project:
+            return
+        chars = [r for r in self.wiki_results if r["type"] == "character"]
+        if not chars:
+            return
+        
+        existing = self.project_service.load_project_data(project, "characters.json")
+        existing_chars = existing.get("characters", [])
+        existing_names = {c.get("name", "").lower() for c in existing_chars}
+        
+        added = 0
+        for c in chars:
+            if c["name"].lower() not in existing_names:
+                existing_chars.append({
+                    "name": c["name"],
+                    "gender": c.get("gender", "Unknown"),
+                    "arabic_name": "",
+                    "description": f"Auto-imported from {c.get('source', 'wiki')}"
+                })
+                added += 1
+        
+        existing["characters"] = existing_chars
+        self.project_service.save_project_data(project, "characters.json", existing)
+        self._load_project_data_to_editor()
+        QMessageBox.information(self.window, "Import Done", f"Added {added} new characters to project '{project}'.\n({len(chars) - added} already existed)")
+    
+    def _wiki_import_glossary(self):
+        project = self._wiki_get_target_project()
+        if not project:
+            return
+        items = [r for r in self.wiki_results if r["type"] in ("ability", "location", "lore")]
+        if not items:
+            return
+        
+        existing = self.project_service.load_project_data(project, "glossary.json")
+        existing_terms = existing.get("terms", [])
+        existing_names = {t.get("term", "").lower() for t in existing_terms}
+        
+        added = 0
+        for item in items:
+            if item["name"].lower() not in existing_names:
+                existing_terms.append({
+                    "term": item["name"],
+                    "translation": "",
+                    "category": item["type"],
+                    "type": item["type"]
+                })
+                added += 1
+        
+        existing["terms"] = existing_terms
+        self.project_service.save_project_data(project, "glossary.json", existing)
+        self._load_project_data_to_editor()
+        QMessageBox.information(self.window, "Import Done", f"Added {added} new glossary terms to project '{project}'.\n({len(items) - added} already existed)")
+    
+    def _wiki_export_csv(self):
+        if not self.wiki_results:
+            return
+        import csv
+        path, _ = QFileDialog.getSaveFileName(self.window, "Export CSV", "", "CSV Files (*.csv)")
+        if not path:
+            return
+        with open(path, "w", newline="", encoding="utf-8-sig") as f:
+            writer = csv.DictWriter(f, fieldnames=["name", "gender", "type", "source"])
+            writer.writeheader()
+            writer.writerows(self.wiki_results)
+        QMessageBox.information(self.window, "Exported", f"Saved {len(self.wiki_results)} items to:\n{path}")
+
+
 if __name__ == "__main__":
     import ctypes
     import os
@@ -1581,3 +1835,4 @@ if __name__ == "__main__":
     controller = AppController(window)
     window.show()
     sys.exit(app.exec())
+

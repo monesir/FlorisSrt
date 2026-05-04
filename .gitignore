@@ -32,7 +32,11 @@ tests/local_*/
 # App Data
 projects/
 gui/projects/
+app_data/
+config/
 debug_last_prompt.txt
+test_*.py
+!tests/
 
 # Build Artifacts
 build/
