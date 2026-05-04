@@ -35,12 +35,6 @@ FlorisSrt is a highly specialized, context-aware translation pipeline designed f
    pip install -r requirements.txt
    ```
 
-## 💻 GUI Guide (How to Use)
-
-### Launching the App
-You can start the graphical user interface by double-clicking the **`FlorisSrt`** shortcut, or by running:
-```cmd
-pythonw gui/main.py
 ```
 
 The application is divided into several main tabs:
